@@ -28,9 +28,7 @@
 			- prepend()
 			- replace()
 			- replace_inner()
-			
-	TODO:
-		- закрытие <datalist> должно закрывать открытые <option>
+		- умеет делать выборку по CSS3-селектору + возможности jQuery
 */
 
 
