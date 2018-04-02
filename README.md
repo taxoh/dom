@@ -31,4 +31,4 @@ HTML DOM parser / editor / beautifier / autocloser
 			- prepend()
 			- replace()
 			- replace_inner()
-			
+		- умеет делать выборку по CSS3-селектору + возможности jQuery
