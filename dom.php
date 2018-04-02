@@ -515,12 +515,28 @@ class html {
 		return $res;
 	}
 	
+	/*	Добавить закрывающие теги тем тегам, которые их не имеют (но должны).
+	*/
+	public function autoclose()
+	{
+		$qkey = 0;
+		$queue = array_values($this->children);
+		while ($e = $queue[$qkey++])
+		{
+			if (!$e->closer && $e->tag{0}!='#' && !in_array($e->tag, HTML_ELEMENTS_VOID))
+			{$e->closer = '</'.$e->tag.'>';}
+			foreach ($e->children as $ee)
+			{$queue[] = $ee;}
+		}
+		$this->invalidate();
+	}
+	
 	/*	Убрать пробелы по бокам всем текстовым узлам.
 	*/
 	public function minify()
 	{
 		$qkey = 0;
-		$queue = $this->children;
+		$queue = array_values($this->children);
 		while ($e = $queue[$qkey++])
 		{
 			if ($e->is_text)
@@ -535,6 +551,7 @@ class html {
 			foreach ($e->children as $ee)
 			{$queue[] = $ee;}
 		}
+		$this->invalidate();
 	}
 	
 	/*	Обновить узлы внутри текущего узла так, чтобы они были отравняны табуляциями и переносами строки.
@@ -564,6 +581,7 @@ class html {
 			foreach ($e->children as $ee)
 			{$queue[] = $ee;}
 		}
+		$this->invalidate();
 	}
 	
 	// получить список детей ($this->children) текущего узла исключая текстовые
