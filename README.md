@@ -1,5 +1,7 @@
 # dom
+
 HTML DOM parser / editor / beautifier
+
 Простой и быстрый HTML DOM парсер/редактор.
 	
 	Пример использования:
