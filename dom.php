@@ -42,8 +42,6 @@ define(HTML_ELEMENTS_BLOCK, ['address', 'article', 'aside', 'blockquote', 'cente
 define(HTML_ELEMENTS_SPAN, ['a', 'abbr', 'acronym', 'applet', 'audio', 'b', 'bdi', 'bdo', 'big', 'blink', 'br', 'button', 'canvas', 'cite', 'code', 'command', 'data', 'del', 'dfn', 'dialog', 'em', 'font', 'i', 'iframe', 'img', 'input', 'ins', 'kbd', 'label', 'mark', 'meter', 'nobr', 'object', 'output', 'picture', 'plaintext', 'pre', 'progress', 'q', 'rp', 'ruby', 's', 'samp', 'select', 'small', 'span', 'strike', 'strong', 'sub', 'sup', 'textarea', 'time', 'tt', 'u', 'var', 'video', ]);
 // информационные и логические элементы, которые однозначно нельзя отнести к строчным, либо блочным (часто невидимые).
 define(HTML_ELEMENTS_INFO, ['area', 'base', 'basefont', 'bgsound', 'body', 'caption', 'col', 'colgroup', 'datalist', 'frame', 'frameset', 'head', 'html', 'keygen', 'legend', 'link', 'map', 'menu', 'menuitem', 'meta', 'noembed', 'noframes', 'noscript', 'optgroup', 'option', 'param', 'script', 'source', 'style', 'title', 'track', 'wbr']);
-// теги, не имеющие закрывающих ("void-elements")
-define(HTML_ELEMENTS_VOID, ['area', 'base', 'basefont', 'bgsound', 'br', 'col', 'command', 'embed', 'frame', 'hr', 'img', 'input', 'isindex', 'keygen', 'link', 'meta', 'nextid', 'param', 'source', 'track', 'wbr', ]);
 // "выделители" (phrase tags): жирный, курсив и прочие косметические выделялки для текста
 define(HTML_ELEMENTS_MARKS, ['abbr', 'acronym', 'b', 'big', 'cite', 'code', 'del', 'dfn', 'em', 'font', 'i', 'ins', 'kbd', 'mark', 's', 'samp', 'small', 'span', 'strike', 'strong', 'sub', 'sup', 'tt', 'u', 'q', 'var', ]);
 // элементы, разрешенные спецификацией внутри <p> 
@@ -63,7 +61,7 @@ define(HTML_ELEMENTS_OBSOLETE, ['acronym', 'applet', 'basefont', 'bgsound', 'big
 // элементы, добавленные в HTML5
 define(HTML_ELEMENTS_HTML5, ['article', 'aside', 'bdi', 'details', 'dialog', 'figcaption', 'figure', 'footer', 'header', 'main', 'mark', 'menuitem', 'meter', 'nav', 'progress', 'rp', 'rt', 'ruby', 'section', 'summary', 'time', 'wbr', 'datalist', 'keygen', 'output', ]);
 // используются здешним парсером: теги, не имеющие закрывающих
-define(HTML_ELEMENTS_VOID_CACHE, ['!doctype', '?xml', 'area', 'base', 'basefont', 'bgsound', 'br', 'col', 'command', 'embed', 'frame', 'hr', 'img', 'input', 'isindex', 'keygen', 'link', 'meta', 'nextid', 'param', 'source', 'track', 'wbr', ]);
+define(HTML_ELEMENTS_VOID, ['!doctype', '?xml', 'area', 'base', 'basefont', 'bgsound', 'br', 'col', 'command', 'embed', 'frame', 'hr', 'img', 'input', 'isindex', 'keygen', 'link', 'meta', 'nextid', 'param', 'source', 'track', 'wbr', ]);
 // используются здешним парсером: теги, которые будучи открытыми не воспринимают других тегов, в том числе комментарии
 define(HTML_ELEMENTS_SPECIAL, ['script', 'style']);
 
@@ -516,19 +514,25 @@ class html {
 	}
 	
 	/*	Добавить закрывающие теги тем тегам, которые их не имеют (но должны).
+		Вернет кол-во добавленных закрывашек.
 	*/
 	public function autoclose()
 	{
+		$res = 0;
 		$qkey = 0;
 		$queue = array_values($this->children);
 		while ($e = $queue[$qkey++])
 		{
 			if (!$e->closer && $e->tag{0}!='#' && !in_array($e->tag, HTML_ELEMENTS_VOID))
-			{$e->closer = '</'.$e->tag.'>';}
+			{
+				$e->closer = '</'.$e->tag.'>';
+				$res++;
+			}
 			foreach ($e->children as $ee)
 			{$queue[] = $ee;}
 		}
 		$this->invalidate();
+		return $res;
 	}
 	
 	/*	Убрать пробелы по бокам всем текстовым узлам.
@@ -1332,7 +1336,7 @@ class html {
 				$obj->tag_block = $tag_block;
 				$obj->parent = $curr_parent;
 				$obj->parent->children[] = $obj;
-				if (in_array($name, HTML_ELEMENTS_VOID_CACHE) || preg_match('#(\s|<\w+)/\s*>#', $tag_block))
+				if (in_array($name, HTML_ELEMENTS_VOID) || preg_match('#(\s|<\w+)/\s*>#', $tag_block))
 				{
 					// тег, "не-имеющий-закрывающего"
 				}
