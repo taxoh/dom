@@ -1,6 +1,6 @@
 # dom
 
-HTML DOM parser / editor / beautifier
+HTML DOM parser / editor / beautifier / autocloser
 
 Простой и быстрый HTML DOM парсер/редактор.
 	
