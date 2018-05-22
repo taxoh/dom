@@ -12,6 +12,7 @@
 	
 	Описание:
 	
+		- умеет делать выборку по CSS3-селектору + возможности jQuery
 		- "узел" - это объект типа html (или его наследник)
 		- "документ" и "корневой узел" это одно и то же
 		- корневой узел всегда один
@@ -22,48 +23,49 @@
 		- если закрывашка пуста, это еще не значит что это тег незакрывающегося типа
 		- html-entities не декодируются кроме как в атрибутах
 		- может парсить XML файлы (но трактовать документ будет как HTML, в некоторых случаях это может влиять на корректность разбора)
+		- блоки CDATA не замечает, читает их как и остальной (обычный) текст
 		- класс html можно пронаследовать и что-то модифицировать или добавить свойства/методы
 		- "открепленный узел" свое состояние не меняет, с ним можно продолжать работу, но стоит понимать, что он помнит своего (прежнего) родителя и находится в невалидном состоянии (значение parent у него невалидно). Сделать его валидным снова можно передав его в качестве параметра любой из функций:
 			- append()
 			- prepend()
 			- replace()
 			- replace_inner()
-		- умеет делать выборку по CSS3-селектору + возможности jQuery
+		
 */
 
 
 // списки HTML-элементов, разделенные на группы.
 
 // все элементы: cобраны все теги всех стандартов вплоть до HTML5 включительно, а также устаревшие и (почти все) нестандартные теги
-define(HTML_ELEMENTS_ALL, ['a', 'abbr', 'acronym', 'address', 'applet', 'area', 'article', 'aside', 'audio', 'b', 'base', 'basefont', 'bdi', 'bdo', 'bgsound', 'big', 'blink', 'blockquote', 'body', 'br', 'button', 'canvas', 'caption', 'center', 'cite', 'code', 'col', 'colgroup', 'command', 'data', 'datalist', 'dd', 'del', 'details', 'dfn', 'dialog', 'dir', 'div', 'dl', 'dt', 'em', 'embed', 'fieldset', 'figcaption', 'figure', 'font', 'footer', 'form', 'frame', 'frameset', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'head', 'header', 'hgroup', 'hr', 'html', 'i', 'iframe', 'img', 'input', 'ins', 'isindex', 'kbd', 'keygen', 'label', 'legend', 'li', 'link', 'main', 'map', 'mark', 'marquee', 'menu', 'menuitem', 'meta', 'meter', 'nav', 'nobr', 'noembed', 'noframes', 'noscript', 'object', 'ol', 'optgroup', 'option', 'output', 'p', 'param', 'picture', 'plaintext', 'pre', 'progress', 'q', 'rp', 'rt', 'ruby', 's', 'samp', 'script', 'section', 'select', 'small', 'source', 'span', 'strike', 'strong', 'style', 'sub', 'summary', 'sup', 'table', 'tbody', 'td', 'textarea', 'tfoot', 'th', 'thead', 'time', 'title', 'tr', 'track', 'tt', 'u', 'ul', 'var', 'video', 'wbr', 'xmp', ]);
+define('HTML_ELEMENTS_ALL', ['a', 'abbr', 'acronym', 'address', 'applet', 'area', 'article', 'aside', 'audio', 'b', 'base', 'basefont', 'bdi', 'bdo', 'bgsound', 'big', 'blink', 'blockquote', 'body', 'br', 'button', 'canvas', 'caption', 'center', 'cite', 'code', 'col', 'colgroup', 'command', 'data', 'datalist', 'dd', 'del', 'details', 'dfn', 'dialog', 'dir', 'div', 'dl', 'dt', 'em', 'embed', 'fieldset', 'figcaption', 'figure', 'font', 'footer', 'form', 'frame', 'frameset', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'head', 'header', 'hgroup', 'hr', 'html', 'i', 'iframe', 'img', 'input', 'ins', 'isindex', 'kbd', 'keygen', 'label', 'legend', 'li', 'link', 'main', 'map', 'mark', 'marquee', 'menu', 'menuitem', 'meta', 'meter', 'nav', 'nobr', 'noembed', 'noframes', 'noscript', 'object', 'ol', 'optgroup', 'option', 'output', 'p', 'param', 'picture', 'plaintext', 'pre', 'progress', 'q', 'rp', 'rt', 'ruby', 's', 'samp', 'script', 'section', 'select', 'small', 'source', 'span', 'strike', 'strong', 'style', 'sub', 'summary', 'sup', 'table', 'tbody', 'td', 'textarea', 'tfoot', 'th', 'thead', 'time', 'title', 'tr', 'track', 'tt', 'u', 'ul', 'var', 'video', 'wbr', 'xmp', ]);
 // блочные элементы
-define(HTML_ELEMENTS_BLOCK, ['address', 'article', 'aside', 'blockquote', 'center', 'dd', 'details', 'dir', 'div', 'dl', 'dt', 'embed', 'fieldset', 'figcaption', 'figure', 'footer', 'form', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'header', 'hgroup', 'hr', 'isindex', 'li', 'main', 'marquee', 'nav', 'ol', 'p', 'pre', 'rt', 'section', 'summary', 'table', 'tbody', 'td', 'tfoot', 'th', 'thead', 'tr', 'ul', 'xmp', ]);
+define('HTML_ELEMENTS_BLOCK', ['address', 'article', 'aside', 'blockquote', 'center', 'dd', 'details', 'dir', 'div', 'dl', 'dt', 'embed', 'fieldset', 'figcaption', 'figure', 'footer', 'form', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'header', 'hgroup', 'hr', 'isindex', 'li', 'main', 'marquee', 'nav', 'ol', 'p', 'pre', 'rt', 'section', 'summary', 'table', 'tbody', 'td', 'tfoot', 'th', 'thead', 'tr', 'ul', 'xmp', ]);
 // строчные элементы
-define(HTML_ELEMENTS_SPAN, ['a', 'abbr', 'acronym', 'applet', 'audio', 'b', 'bdi', 'bdo', 'big', 'blink', 'br', 'button', 'canvas', 'cite', 'code', 'command', 'data', 'del', 'dfn', 'dialog', 'em', 'font', 'i', 'iframe', 'img', 'input', 'ins', 'kbd', 'label', 'mark', 'meter', 'nobr', 'object', 'output', 'picture', 'plaintext', 'pre', 'progress', 'q', 'rp', 'ruby', 's', 'samp', 'select', 'small', 'span', 'strike', 'strong', 'sub', 'sup', 'textarea', 'time', 'tt', 'u', 'var', 'video', ]);
+define('HTML_ELEMENTS_SPAN', ['a', 'abbr', 'acronym', 'applet', 'audio', 'b', 'bdi', 'bdo', 'big', 'blink', 'br', 'button', 'canvas', 'cite', 'code', 'command', 'data', 'del', 'dfn', 'dialog', 'em', 'font', 'i', 'iframe', 'img', 'input', 'ins', 'kbd', 'label', 'mark', 'meter', 'nobr', 'object', 'output', 'picture', 'plaintext', 'pre', 'progress', 'q', 'rp', 'ruby', 's', 'samp', 'select', 'small', 'span', 'strike', 'strong', 'sub', 'sup', 'textarea', 'time', 'tt', 'u', 'var', 'video', ]);
 // информационные и логические элементы, которые однозначно нельзя отнести к строчным, либо блочным (часто невидимые).
-define(HTML_ELEMENTS_INFO, ['area', 'base', 'basefont', 'bgsound', 'body', 'caption', 'col', 'colgroup', 'datalist', 'frame', 'frameset', 'head', 'html', 'keygen', 'legend', 'link', 'map', 'menu', 'menuitem', 'meta', 'noembed', 'noframes', 'noscript', 'optgroup', 'option', 'param', 'script', 'source', 'style', 'title', 'track', 'wbr']);
+define('HTML_ELEMENTS_INFO', ['area', 'base', 'basefont', 'bgsound', 'body', 'caption', 'col', 'colgroup', 'datalist', 'frame', 'frameset', 'head', 'html', 'keygen', 'legend', 'link', 'map', 'menu', 'menuitem', 'meta', 'noembed', 'noframes', 'noscript', 'optgroup', 'option', 'param', 'script', 'source', 'style', 'title', 'track', 'wbr']);
 // "выделители" (phrase tags): жирный, курсив и прочие косметические выделялки для текста
-define(HTML_ELEMENTS_MARKS, ['abbr', 'acronym', 'b', 'big', 'cite', 'code', 'del', 'dfn', 'em', 'font', 'i', 'ins', 'kbd', 'mark', 's', 'samp', 'small', 'span', 'strike', 'strong', 'sub', 'sup', 'tt', 'u', 'q', 'var', ]);
+define('HTML_ELEMENTS_MARKS', ['abbr', 'acronym', 'b', 'big', 'cite', 'code', 'del', 'dfn', 'em', 'font', 'i', 'ins', 'kbd', 'mark', 's', 'samp', 'small', 'span', 'strike', 'strong', 'sub', 'sup', 'tt', 'u', 'q', 'var', ]);
 // элементы, разрешенные спецификацией внутри <p> 
-define(HTML_ELEMENTS_PHRASING, ['a', 'abbr', 'area', 'audio', 'b', 'bdi', 'bdo', 'br', 'button', 'canvas', 'cite', 'code', 'command', 'datalist', 'del', 'dfn', 'em', 'embed', 'i', 'iframe', 'img', 'input', 'ins', 'kbd', 'keygen', 'label', 'map', 'mark', 'math', 'meter', 'noscript', 'object', 'output', 'progress', 'q', 'ruby', 's', 'samp', 'script', 'select', 'small', 'span', 'strong', 'sub', 'sup', 'svg', 'textarea', 'time', 'u', 'var', 'video', 'wbr', 'text']);
+define('HTML_ELEMENTS_PHRASING', ['a', 'abbr', 'area', 'audio', 'b', 'bdi', 'bdo', 'br', 'button', 'canvas', 'cite', 'code', 'command', 'datalist', 'del', 'dfn', 'em', 'embed', 'i', 'iframe', 'img', 'input', 'ins', 'kbd', 'keygen', 'label', 'map', 'mark', 'math', 'meter', 'noscript', 'object', 'output', 'progress', 'q', 'ruby', 's', 'samp', 'script', 'select', 'small', 'span', 'strong', 'sub', 'sup', 'svg', 'textarea', 'time', 'u', 'var', 'video', 'wbr', 'text']);
 // микроразметка: элементы, дающие конкретную классифицирующую информацию об определенных частях документа
-define(HTML_ELEMENTS_MICRO, ['abbr', 'acronym', 'address', 'article', 'aside', 'button', 'cite', 'code', 'dd', 'dfn', 'dt', 'footer', 'header', 'main', 'meta', 'nav', 'time', 'q', ]);
+define('HTML_ELEMENTS_MICRO', ['abbr', 'acronym', 'address', 'article', 'aside', 'button', 'cite', 'code', 'dd', 'dfn', 'dt', 'footer', 'header', 'main', 'meta', 'nav', 'time', 'q', ]);
 // формы: элементы, связанные с веб-формами
-define(HTML_ELEMENTS_FORMS, ['datalist', 'fieldset', 'form', 'input', 'button', 'label', 'legend', 'optgroup', 'option', 'select', 'textarea', 'keygen', ]);
+define('HTML_ELEMENTS_FORMS', ['datalist', 'fieldset', 'form', 'input', 'button', 'label', 'legend', 'optgroup', 'option', 'select', 'textarea', 'keygen', ]);
 // таблицы: элементы, связанные с таблицами
-define(HTML_ELEMENTS_TABLES, ['table', 'caption', 'colgroup', 'col', 'thead', 'tbody', 'tfoot', 'tr', 'td', 'th', ]);
+define('HTML_ELEMENTS_TABLES', ['table', 'caption', 'colgroup', 'col', 'thead', 'tbody', 'tfoot', 'tr', 'td', 'th', ]);
 // картинки: элементы, связанные с изображениями
-define(HTML_ELEMENTS_IMAGES, ['area', 'img', 'map', 'picture', 'canvas', 'figure', 'figcaption', ]);
+define('HTML_ELEMENTS_IMAGES', ['area', 'img', 'map', 'picture', 'canvas', 'figure', 'figcaption', ]);
 // head: элементы, разрешенные к размещению внутри <head>
-define(HTML_ELEMENTS_HEAD,  ['base', 'basefont', 'bgsound', 'link', 'meta', 'script', 'style', 'title', ]);
+define('HTML_ELEMENTS_HEAD',  ['base', 'basefont', 'bgsound', 'link', 'meta', 'script', 'style', 'title', ]);
 // устаревшие и нестандартные элементы (не поддерживаются в HTML5)
-define(HTML_ELEMENTS_OBSOLETE, ['acronym', 'applet', 'basefont', 'bgsound', 'big', 'blink', 'center', 'command', 'data', 'dir', 'font', 'frame', 'frameset', 'hgroup', 'isindex', 'listing', 'marquee', 'nobr', 'noembed', 'noframes', 'plaintext', 'shadow', 'spacer', 'strike', 'tt', 'xmp', ]);
+define('HTML_ELEMENTS_OBSOLETE', ['acronym', 'applet', 'basefont', 'bgsound', 'big', 'blink', 'center', 'command', 'data', 'dir', 'font', 'frame', 'frameset', 'hgroup', 'isindex', 'listing', 'marquee', 'nobr', 'noembed', 'noframes', 'plaintext', 'shadow', 'spacer', 'strike', 'tt', 'xmp', ]);
 // элементы, добавленные в HTML5
-define(HTML_ELEMENTS_HTML5, ['article', 'aside', 'bdi', 'details', 'dialog', 'figcaption', 'figure', 'footer', 'header', 'main', 'mark', 'menuitem', 'meter', 'nav', 'progress', 'rp', 'rt', 'ruby', 'section', 'summary', 'time', 'wbr', 'datalist', 'keygen', 'output', ]);
-// используются здешним парсером: теги, не имеющие закрывающих
-define(HTML_ELEMENTS_VOID, ['!doctype', '?xml', 'area', 'base', 'basefont', 'bgsound', 'br', 'col', 'command', 'embed', 'frame', 'hr', 'img', 'input', 'isindex', 'keygen', 'link', 'meta', 'nextid', 'param', 'source', 'track', 'wbr', ]);
-// используются здешним парсером: теги, которые будучи открытыми не воспринимают других тегов, в том числе комментарии
-define(HTML_ELEMENTS_SPECIAL, ['script', 'style']);
+define('HTML_ELEMENTS_HTML5', ['article', 'aside', 'bdi', 'details', 'dialog', 'figcaption', 'figure', 'footer', 'header', 'main', 'mark', 'menuitem', 'meter', 'nav', 'progress', 'rp', 'rt', 'ruby', 'section', 'summary', 'time', 'wbr', 'datalist', 'keygen', 'output', ]);
+// используются здешним парсером: теги, не имеющие закрывающих. В режиме XML этот список не учитывается.
+define('HTML_ELEMENTS_VOID', ['!doctype', '?xml', 'area', 'base', 'basefont', 'bgsound', 'br', 'col', 'command', 'embed', 'frame', 'hr', 'img', 'input', 'isindex', 'keygen', 'link', 'meta', 'nextid', 'param', 'source', 'track', 'wbr', ]);
+// используются здешним парсером: теги, которые будучи открытыми не воспринимают других тегов, в том числе комментарии. В режиме XML этот список не учитывается.
+define('HTML_ELEMENTS_SPECIAL', ['script', 'style']);
 
 
 // класс HTML-узла
@@ -588,6 +590,49 @@ class html {
 		$this->invalidate();
 	}
 	
+	/*	Оставить внутри текущего элемента теги только заданных типов.
+			$tags - массив имен тегов, например: ['table', 'tr', 'td']
+	*/
+	public function tag_filter($tags)
+	{
+		$qkey = 0;
+		$queue = array_values($this->children);
+		while ($e = $queue[$qkey++])
+		{
+			if ($e->tag{0}!='#' && !in_array($e->tag, $tags))
+			{
+				$e->remove();
+				continue;
+			}
+			foreach ($e->children as $ee)
+			{$queue[] = $ee;}
+		}
+		$this->invalidate();
+	}
+	
+	// для текущего элемента (и всех элементов рекурсивно внутри) удалить атрибуты, отвечающие за HTML-события, т.е. имеющие в названии приставку "on*".
+	public function remove_events()
+	{
+		$qkey = 0;
+		$queue = [$this];
+		while ($e = $queue[$qkey++])
+		{
+			if ($e->tag{0}!='#')
+			{
+				$a = $e->attrs();
+				$a_keys = array_keys($a);
+				$a_keys2 = preg_grep('#^on#', $a_keys, PREG_GREP_INVERT);
+				if (count($a_keys)!=count($a_keys2))
+				{
+					$a = array_intersect_key($a, array_flip($a_keys2));
+					$e->attrs($a);
+				}
+			}
+			foreach ($e->children as $ee)
+			{$queue[] = $ee;}
+		}
+	}
+	
 	// получить список детей ($this->children) текущего узла исключая текстовые
 	public function children_notext()
 	{
@@ -682,7 +727,11 @@ class html {
 					if (!isset($res[$a]))
 					{
 						// раскодировать *любые* HTML-entities в строке. В том числе: "<", ">", '"' и "'"
-						$res[$a] = html_entity_decode($mm[2], ENT_HTML5 + ENT_QUOTES, 'utf-8');
+						$x = $mm[2];
+						$x = html_entity_decode($x, ENT_HTML5 + ENT_QUOTES, 'utf-8');
+						// возникают невидимые неразрывные пробелы ("nbsp" после декодирования)
+						$x = preg_replace('#\x{a0}#u', ' ', $x);
+						$res[$a] = $x;
 					}
 				}
 				if (count($attrs_cache)>5000)
@@ -695,21 +744,10 @@ class html {
 		{
 			if ($this->tag{0}=='#' || !preg_match('#^(<[^\s<>]+\s*).*?([\s/]*>)$#s', $this->tag_block, $m))
 			{return;}
-			$z = '';
-			foreach ($values as $k=>$v)
-			{$z .= $k.'="'.htmlspecialchars($v).'" ';}
-			$this->tag_block = $m[1].(($z=='' || ord(substr($m[1],-1))<=32)?'':' ').substr($z,0,-1).$m[2];
+			$z = [];
+			foreach ($values as $k=>$v) $z[] = $k.'="'.htmlspecialchars($v).'"';
+			$this->tag_block = $m[1].((!$z || ord(substr($m[1],-1))<=32)?'':' ').implode(' ', $z).$m[2];
 			$this->invalidate();
-		}
-	}
-	
-	// убрать из массива атрибутов $attrs атрибуты, связанные с событиями (имеющие приставку "on")
-	public static function attr_remove_events(&$attrs)
-	{
-		foreach ($attrs as $k=>$v)
-		{
-			if (substr($k,0,2)=='on')
-			{unset($attrs[$k]);}
 		}
 	}
 	
@@ -1069,7 +1107,7 @@ class html {
 			foreach ($node->parents() as $p)
 			{$pp[] = $p;}
 		}
-		$pp = array_unique($pp, SORT_REGULAR);
+		// здесь нельзя выпонить array_unique($pp), т.к. nesting ошибка возникает
 		$res2 = [];
 		foreach ($result as $k=>$v)
 		{if (!in_array($v, $pp, true)) $res2[] = $v;}
@@ -1200,7 +1238,7 @@ class html {
 	protected function set($html, $only_inner = true)
 	{
 		// вырожденная ситуация: когда корневому ставят пустой контент, то нужно добавить хотя бы один пустой текстовый узел
-		if ($this->tag===NULL && ((string)$html==='') && $html!=='0')
+		if ($this->tag===NULL && ((string)$html)==='')
 		{
 			$x_obj = $this->new_tag();
 			$x_obj->tag = '#text';
@@ -1211,6 +1249,8 @@ class html {
 			$this->invalidate();
 			return;
 		}
+		$is_xml = false;
+		
 		$curr_parent = $this;
 		if ($this->tag{0}=='#')
 		{$only_inner = false;}
@@ -1259,7 +1299,7 @@ class html {
 				// тег открылся.
 				
 				// список специальных тегов, которые игнорируют любые другие теги пока сами не закроются.
-				if (in_array($name, HTML_ELEMENTS_SPECIAL))
+				if (!$is_xml && in_array($name, HTML_ELEMENTS_SPECIAL))
 				{$special_opened = $name;}
 					else
 				{
@@ -1336,7 +1376,10 @@ class html {
 				$obj->tag_block = $tag_block;
 				$obj->parent = $curr_parent;
 				$obj->parent->children[] = $obj;
-				if (in_array($name, HTML_ELEMENTS_VOID) || preg_match('#(\s|<\w+)/\s*>#', $tag_block))
+				
+				if ($name=='?xml') $is_xml = true;
+				
+				if (($is_xml && $name=='?xml') || (!$is_xml && (in_array($name, HTML_ELEMENTS_VOID) || preg_match('#(\s|<\w+)/\s*>#', $tag_block))))
 				{
 					// тег, "не-имеющий-закрывающего"
 				}
@@ -1350,7 +1393,7 @@ class html {
 				else
 			{
 				// тег закрылся (из тех, что ранее были открыты)
-				if (in_array($name, HTML_ELEMENTS_SPECIAL))
+				if (!$is_xml && in_array($name, HTML_ELEMENTS_SPECIAL))
 				{$special_opened = '';}
 				$n = 0;
 				$was_table = $found = false;
