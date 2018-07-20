@@ -13,6 +13,7 @@
 	Описание:
 	
 		- умеет делать выборку по CSS3-селектору + возможности jQuery
+		- есть полезные функции для поиска повторяющихся участков html-кода: forks(), search(), итд
 		- "узел" - это объект типа html (или его наследник)
 		- "документ" и "корневой узел" это одно и то же
 		- корневой узел всегда один
@@ -30,7 +31,7 @@
 			- prepend()
 			- replace()
 			- replace_inner()
-		
+	
 */
 
 
@@ -656,7 +657,6 @@ class html {
 	
 	/*	Обработать колбеком все суб-узлы внутри текущего узла (включая вложенные, исключая сам тег).
 		Самый обычный и последовательный обход. Идем словно курсором.
-		Достаточно тормозной, так что если нужна скорость, то лучше делать обход полностью вручную.
 		
 		Параметры:
 			$callback - замыкание или имя функции. Имеет формат:
@@ -667,9 +667,9 @@ class html {
 					$node - очередной узел, 
 					$level - уровень вложенности (целое число от 0 и выше).
 			Если колбек вернет TRUE, то обход будет прекращен.
-			
-		Вот более эффективный и управляемый ("ручной") метод перебора узлов:
-		(но обратите внимание, что порядок перебора при этом другой)
+		
+		Если важна скорость и не важен порядок обработки, то лучше делать обход полностью вручную. Пример:
+		(порядок перебора будет другой!)
 		
 			$qkey = 0;
 			// здесь аккуратнее: если передать $node->children, то его узлы могут иметь номера не по порядку, а это чревато! (поэтому сделайте array_values())
@@ -681,11 +681,11 @@ class html {
 			}
 	*/
 	public function iterate($callback)
-	{$this->iterate_recurs($this, 0, $callback);}
+	{$this->iterate_recurs($this, false, $callback);}
 	
 	// тоже самое что iterate(), но обход задом наперед (начиная с конца).
 	public function iterate_reverse($callback)
-	{$this->iterate_recurs_reverse($this, 0, $callback);}
+	{$this->iterate_recurs($this, true, $callback);}
 	
 	/*	Получить список родителей текущего узла, начиная от самого близкого и вверх, исключая корневой.
 			$self - добавить также в возвращаемый массив ссылку на себя.
@@ -734,8 +734,8 @@ class html {
 						$res[$a] = $x;
 					}
 				}
-				if (count($attrs_cache)>5000)
-				{$attrs_cache = array_slice($attrs_cache, 2500);}
+				if (count($attrs_cache)>20000)
+				{$attrs_cache = array_slice($attrs_cache, 10000, NULL, true);}
 				$attrs_cache[$this->tag_block] = $res;
 			}
 			return $res;
@@ -1006,18 +1006,17 @@ class html {
 	}
 	
 	/*	Найти узлы, находящиеся между двумя узлами, при условии что оба узла имеют общего прямого родителя и расположены в прямом порядке.
-		Вернет массив узлов или NULL, если условие не соблюдено.
+		Вернет массив узлов. Если условие не соблюдено, либо узлов нет, то массив будет пустым.
 	*/
 	static public function between($node1, $node2)
 	{
 		$res = [];
 		foreach ($node1->parent->children as $c)
 		{
-			if ($c===$node2) {$ok = true;break;}
+			if ($c===$node2) break;
 			if ($start) $res[] = $c;
 			if ($c===$node1) $start = true;
 		}
-		if ($start && $ok)
 		return $res;
 	}
 	
@@ -1451,21 +1450,45 @@ class html {
 		$res .= $tag->closer;
 	}
 	
-	protected function iterate_recurs($tag, $level, $callback)
-	{
-		foreach ($tag->children as $tag2)
-		{
-			if ((($callback)($tag2, $level)) || $this->iterate_recurs($tag2, $level+1, $callback))
-			{return true;}
-		}
-	}
+	// protected function iterate_recurs($tag, $level, $callback)
+	// {
+		// foreach ($tag->children as $tag2)
+		// {
+			// if ((($callback)($tag2, $level)) || $this->iterate_recurs($tag2, $level+1, $callback))
+			// {return true;}
+		// }
+	// }
 	
-	protected function iterate_recurs_reverse($tag, $level, $callback)
+	// protected function iterate_recurs_reverse($tag, $level, $callback)
+	// {
+		// foreach (array_reverse($tag->children) as $tag2)
+		// {
+			// if ((($callback)($tag2, $level)) || $this->iterate_recurs_reverse($tag2, $level+1, $callback))
+			// {return true;}
+		// }
+	// }
+	
+	protected function iterate_recurs($node, $reverse, $callback)
 	{
-		foreach (array_reverse($tag->children) as $tag2)
+		$stack = [['node' => $node, ], ];
+		while ($stack)
 		{
-			if ((($callback)($tag2, $level)) || $this->iterate_recurs_reverse($tag2, $level+1, $callback))
-			{return true;}
+			$level = count($stack)-1;
+			$cur = &$stack[$level];
+			if (!$cur['iter'])
+			{
+				$z = $cur['node']->children;
+				if ($reverse) $z = array_reverse($z);
+				$cur['iter'] = new ArrayIterator($z);
+			}
+			if ($node = $cur['iter']->current())
+			{
+				if ($res = ($callback)($node, $level)) return $res;
+				$cur['iter']->next();
+				$stack[] = ['node' => $node, ];
+			}
+				else
+			{array_pop($stack);}
 		}
 	}
 	
