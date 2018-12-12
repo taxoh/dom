@@ -3,6 +3,8 @@
 HTML DOM parser / editor / beautifier / autocloser
 
 Простой и быстрый HTML DOM парсер/редактор.
+
+Совместим с PHP 7.3
 	
 	Пример использования:
 	
