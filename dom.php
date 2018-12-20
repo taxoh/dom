@@ -1,5 +1,10 @@
 <?php
-/*	Простой и быстрый HTML DOM парсер/редактор.
+/*	Простой и быстрый HTML DOM парсер/редактор.	
+	Содержит класс DOM-узла (html), а также удобные функции:
+	
+		url_abs() - абсолютизация URL
+		url_replace() - замена вашим колбеком голых доменов и URL в тексте, находящихся вне href-атрибутов
+		cu_download() - скачивание страниц с приемом заголовка Content-Type
 	
 	Пример использования:
 	
@@ -31,6 +36,8 @@
 			- prepend()
 			- replace()
 			- replace_inner()
+		- поддерживается и корректно обрабатывается операция clone
+		- поддерживает красивый var_dump() для узлов (без гигантских листингов)
 	
 */
 
@@ -42,11 +49,15 @@ define('HTML_ELEMENTS_ALL', ['a', 'abbr', 'acronym', 'address', 'applet', 'area'
 // блочные элементы
 define('HTML_ELEMENTS_BLOCK', ['address', 'article', 'aside', 'blockquote', 'center', 'dd', 'details', 'dir', 'div', 'dl', 'dt', 'embed', 'fieldset', 'figcaption', 'figure', 'footer', 'form', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'header', 'hgroup', 'hr', 'isindex', 'li', 'main', 'marquee', 'nav', 'ol', 'p', 'pre', 'rt', 'section', 'summary', 'table', 'tbody', 'td', 'tfoot', 'th', 'thead', 'tr', 'ul', 'xmp', ]);
 // строчные элементы
-define('HTML_ELEMENTS_SPAN', ['a', 'abbr', 'acronym', 'applet', 'audio', 'b', 'bdi', 'bdo', 'big', 'blink', 'br', 'button', 'canvas', 'cite', 'code', 'command', 'data', 'del', 'dfn', 'dialog', 'em', 'font', 'i', 'iframe', 'img', 'input', 'ins', 'kbd', 'label', 'mark', 'meter', 'nobr', 'object', 'output', 'picture', 'plaintext', 'pre', 'progress', 'q', 'rp', 'ruby', 's', 'samp', 'select', 'small', 'span', 'strike', 'strong', 'sub', 'sup', 'textarea', 'time', 'tt', 'u', 'var', 'video', ]);
+define('HTML_ELEMENTS_SPAN', ['a', 'abbr', 'acronym', 'applet', 'audio', 'b', 'bdi', 'bdo', 'big', 'blink', 'br', 'button', 'canvas', 'cite', 'code', 'command', 'data', 'del', 'dfn', 'dialog', 'em', 'figcaption', 'figure', 'font', 'i', 'iframe', 'img', 'input', 'ins', 'kbd', 'label', 'mark', 'meter', 'nobr', 'object', 'output', 'picture', 'plaintext', 'pre', 'progress', 'q', 'rp', 'ruby', 's', 'samp', 'select', 'small', 'span', 'strike', 'strong', 'sub', 'sup', 'textarea', 'time', 'tt', 'u', 'var', 'video', ]);
 // информационные и логические элементы, которые однозначно нельзя отнести к строчным, либо блочным (часто невидимые).
 define('HTML_ELEMENTS_INFO', ['area', 'base', 'basefont', 'bgsound', 'body', 'caption', 'col', 'colgroup', 'datalist', 'frame', 'frameset', 'head', 'html', 'keygen', 'legend', 'link', 'map', 'menu', 'menuitem', 'meta', 'noembed', 'noframes', 'noscript', 'optgroup', 'option', 'param', 'script', 'source', 'style', 'title', 'track', 'wbr']);
 // "выделители" (phrase tags): жирный, курсив и прочие косметические выделялки для текста
 define('HTML_ELEMENTS_MARKS', ['abbr', 'acronym', 'b', 'big', 'cite', 'code', 'del', 'dfn', 'em', 'font', 'i', 'ins', 'kbd', 'mark', 's', 'samp', 'small', 'span', 'strike', 'strong', 'sub', 'sup', 'tt', 'u', 'q', 'var', ]);
+// элементы, используемые внутри (полезного) контента. Без тега "span".
+define('HTML_CONTENT_TAGS', ['a', 'abbr', 'acronym', 'audio', 'b', 'blockquote', 'br', 'cite', 'code', 'dd', 'del', 'dfn', 'dl', 'dt', 'em', 'embed', 'font', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'i', 'iframe', 'img', 'ins', 'kbd', 'li', 'mark', 'object', 'ol', 'p', 'param', 'picture', 'pre', 'q', 'rp', 'rt', 'ruby', 's', 'samp', 'small', 'source', 'strike', 'strong', 'sub', 'sup', 'table', 'tbody', 'td', 'tfoot', 'th', 'thead', 'time', 'tr', 'track', 'tt', 'u', 'ul', 'var', 'video', ]);
+// элементы, которые всегда подразумевают перенос строки (т.е. не могут собой разделять слова одного предложения)
+define('HTML_LINEBREAK_TAGS', ['audio', 'blockquote', 'br', 'cite', 'code', 'dd', 'dl', 'dt', 'embed', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'iframe', 'img', 'li', 'object', 'ol', 'p', 'picture', 'pre', 'ruby', 'table', 'td', 'th', 'ul', 'video', ]);
 // элементы, разрешенные спецификацией внутри <p> 
 define('HTML_ELEMENTS_PHRASING', ['a', 'abbr', 'area', 'audio', 'b', 'bdi', 'bdo', 'br', 'button', 'canvas', 'cite', 'code', 'command', 'datalist', 'del', 'dfn', 'em', 'embed', 'i', 'iframe', 'img', 'input', 'ins', 'kbd', 'keygen', 'label', 'map', 'mark', 'math', 'meter', 'noscript', 'object', 'output', 'progress', 'q', 'ruby', 's', 'samp', 'script', 'select', 'small', 'span', 'strong', 'sub', 'sup', 'svg', 'textarea', 'time', 'u', 'var', 'video', 'wbr', 'text']);
 // микроразметка: элементы, дающие конкретную классифицирующую информацию об определенных частях документа
@@ -72,20 +83,31 @@ define('HTML_ELEMENTS_SPECIAL', ['script', 'style']);
 // класс HTML-узла
 class html {
 	
-	public $tag;				// имя тега, например 'div'. Всегда в нижнем регистре. Текстовый узел - '#text', комментарий - '#comment', корневой - NULL.
-	public $tag_block;			// открывашка от тега, например '<a href="http://..." someattr="123">'. Содержимое текстовых узлов и HTML-комментариев хранится в этом поле.
-	public $closer;				// закрывашка от тега, например '</a>'. Может быть пустым.
-	public $parent;				// ссылка на родителя. У корневого - NULL.
+	// свойства закомментированы ради уменьшения расхода памяти.
+	// тем не менее, они могут присутствовать когда это необходимо и здесь даны описания для них.
+	
+	// public $tag;				// тип тега (например, 'div'). Всегда в нижнем регистре. Текстовый узел - '#text', комментарий - '#comment', корневой - NULL.
+	// public $tag_block;		// открывашка от тега, например '<a href="http://..." someattr="123">'. Для узлов типа '#text' и '#comment' в этом поле хранится сам текст (либо HTML-комментарий целиком).
+	// public $closer;			// закрывашка от тега, например '</a>'. Может быть пустым, когда закрывашка отсутствует (по тем или иным причинам).
+	// public $parent;			// ссылка на родительский узел. Для корневого - NULL.
+	// public $offset;			// числовое строковое смещение до тега в получившемся документе. Запоняется при вызове calc_offsets().
 	public $children = [];		// массив вложенных узлов. Может быть пустым.
-	public $is_text, $is_comment;// boolean-поля для чтения. При соответствующих типах узлов ставятся в true.
-	public $offset;				// смещение до тега в получившемся документе. Запоняется при вызове calc_offsets().
+	
+	public function __clone()
+	{foreach ($this->children as &$v) $v = clone $v;}
+	
+	public function __debugInfo()
+	{
+		$v = get_object_vars($this);
+		foreach ($v['children'] as $vv) $vv = $vv->__debugInfo();
+		$x = $v['parent'];
+		if ($x->tag===NULL) $v['parent'] = ($x?'(root)':NULL);
+		else $v['parent'] = 'object('.get_class($v['parent']) .') / '.$x->tag;
+		return $v;
+	}
 	
 	/*	Найти узлы внутри текущего элемента, соответствующие заданному CSS-селектору.
-		Поддерживает (почти) все возможности из спецификации CSS3. Разве что псевдокласс ":not" поддерживается ограниченно: можно только одиночные имена тегов, либо одиночные классы, либо одиночные ID, а также можно несколько через запятую. Например: 
-		
-			:not(span)
-			:not(.fancy)
-			:not(.crazy, .fancy)
+		Поддерживает (почти) все возможности из спецификации CSS3. 
 		
 		Также имеются дополнительные нестандартные расширения CSS, а именно:
 		(псевдоклассы применяются в отрыве от комбинаторов)
@@ -104,21 +126,34 @@ class html {
 			:gt(-2) - ("greater") взять последний элемент среди найденных
 			:eq(0) - взять конкретный элемент по индексу (индексы начинаются с 0, как и в jQuery)
 			:eq(-2) - взять 2ой с конца
-			
+		
 		А также:
 			
 			"!=" - (для атрибутов) возможность выборки атрибута "не равного" заданному значению
-			[!attribute] - (для атрибутов) требование отсутствия заданного атрибута
+			[!...] - (для атрибутов) инверсия требования для атрибута. Т.е. срабатывать будет в прямо противоположных случаях.
+			[!myattr] - (для атрибутов) как частный пример случая выше: требование отсутствия атрибута с именем "myattr".
+			[!myattr~=flower] - (для атрибутов) еще один частный пример случая выше: атрибут "myattr" не должен содержать в значении фразу "flower".
 			@text - (в качестве имени тега) выборка текстовых узлов
 			@comment - (в качестве имени тега) выборка узлов-комментариев
-			@attr_href - (в качестве имени тега) собрать атрибуты "href" (можно любые имена). Внимание! Результат будет содержать открепленные текстовые узлы, представляющие из себя значения найденных атрибутов в декодированном виде (это необходимо, т.к. атрибуты сами по себе узлами не являются).
-			
+			@attr_href - (в качестве имени тега, а также наряду с ".class" и "#id" суффиксами) собрать атрибуты с заданным именем. В данном случае для примера это "href" (можно любые имена). Внимание! Результат будет содержать открепленные текстовые узлы, представляющие из себя значения найденных атрибутов в декодированном виде (т.к. атрибуты сами по себе узлами не являются).
+		
 		Также имеются псевдоклассы и псевдоэлементы, которые в принципе невозможно прочитать/изменить без js: в таких случаях поведение будет словно соответствующая часть селектора отсутствует. Селекторы читаются согласно стандарту, поэтому можно подавать взятые прямо со стилей HTML-страниц из сети. Чтение и выполнение хорошо оттестированы и прекрасно работают во всех возможных режимах.
+		
+		Есть некоторые ограничения:
+		
+			- имена атрибутов в css-выражении (в секции требований к атрибутам) могут состоять только из символов: [\w\-]
+			- псевдокласс ":not" (из стандартной css-спецификации) поддерживается ограниченно: можно только одиночные имена тегов, либо одиночные классы, либо одиночные ID, а также можно несколько через запятую. Пример: 
+		
+				:not(span)
+				:not(.fancy)
+				:not(.crazy, .fancy)
 			
 		Параметры:
+		
 			$selector - селектор любой сложности
 			$allow_extensions - включить обработку (наших) нестандартных расширений CSS
-		(!) Внимание: при неправильном селекторе выбросит исключение.
+		
+		Если передать неправильный селектор - функция выбросит исключение.
 		Вернет массив узлов.
 	*/
 	public function css($selector, $allow_extensions = true)
@@ -131,7 +166,7 @@ class html {
 		if ($allow_extensions)
 		{$ext = '|odd|even|hidden|header|first|last|(?:eq|lt|gt)\(\s*\-?\d+\s*\)|(?:not)?contains\((?:"[^"]+"|\'[^\']+\'|[^\)]+)\)';}
 		$gr = '(?P<tag>(?:@?[\w\-]*|\*)(?:[#\.@][\w\-]+)*)'.
-			'(?:\s*\[(?P<no_attr>!)?(?P<attr>[\w\-]+)(?:(?P<eq>=|\~=|\|=|\^=|!=|\$=|\*=)(?P<attr_v>[\w\-"\']*))?\])?'.
+			'(?P<attrs>(?:\[.*?\])*)'.
 			'(?P<pseudo>(?:\s*(?::(?:active|checked|disabled|empty|enabled|first-child|first-of-type|last-of-type|focus|hover|in-range|invalid|last-child|link|not\([\w\-#\.,\s]+\)|only-child|target|valid|visited|root|read-write|lang\([\w\-]+\)|read-only|optional|out-of-range|only-of-type'.$ext.'|nth-of-type'.$nth.'|nth-last-of-type'.$nth.'|nth-last-child'.$nth.'|nth-child'.$nth.')|::(?:after|before|first-letter|first-line|selection)))*)';
 		$off = 0;
 		$buf = []; // текущая собираемая группа
@@ -146,8 +181,6 @@ class html {
 			if (!$mm) continue;
 			if (isset($mm['combinator']))
 			{$mm['combinator'] = trim($mm['combinator']);}
-			if (isset($mm['attr_v']))
-			{$mm['attr_v'] = preg_replace('#^(["\'])(.*)\1$#s', '\2', $mm['attr_v']);}
 			if (isset($mm['combinator']) && !$mm['combinator']) $mm['combinator'] = ' ';
 			if ($mm['combinator']==',')
 			{
@@ -155,7 +188,21 @@ class html {
 				$buf = [];
 			}
 				else
-			{$buf[] = $mm;}
+			{
+				if (preg_match_all('#\[(?P<inv>!)?(?P<attr>[\w\-]+)(?:(?P<eq>=|\~=|\|=|\^=|!=|\$=|\*=)(?P<attr_v>.*?))?\]#si', $mm['attrs'], $m4, PREG_SET_ORDER))
+				{
+					foreach ($m4 as &$v)
+					{
+						if (isset($v['attr_v']))
+						{$v['attr_v'] = preg_replace('#^(["\'])(.*)\1$#s', '\2', $v['attr_v']);}
+					}
+					unset($v);
+					$mm['attrs'] = $m4;
+				}
+					else
+				{$mm['attrs'] = [];}
+				$buf[] = $mm;
+			}
 		}
 		$list[] = $buf;
 		$list = array_filter($list);
@@ -173,12 +220,13 @@ class html {
 						'combinator' - когда это поле непустое, то остальные поля отсутствуют. Это комбинатор. Возможные значения: " ", ">", "+", "~"
 						'tag' - когда пуст или отсутствует, то означает - "любой тег". Искомый тег (опционально в комбинации с множеством классов и/или ID). Также может быть @text, @attr_href, @comment (для текстовых узлов, узлов-комментариев, сбора атрибутов).
 							Примеры: "*", "@text", "@comment", "@attr_href", "*.tag", "tag", "#some", ".class", "tag.class", "tag#some", "tag.class#some.other.shit"
-						'attr' - присутствует, когда требуется атрибут. Здесь хранится его имя.
 						'texcom' - будет true, если ищется узел-коммент или текстовый узел
 						'get_attr' - (массив) будет непуст, если ищутся непосредственно атрибуты
-						'eq' - присутствует, когда есть атрибут и требование к его значению. Возможные значения: "=", "!=", "~=", "|=", "^=", "$=", "*="
-						'no_attr' - отрицание атрибута. Атрибут не должен присутствовать.
-						'attr_v' - присутствует, когда есть атрибут и требование к его значению. Здесь хранится требуемое значение (без кавычек по бокам).
+						'attrs' - список массивов требований к атрибутам, каждый вида:
+							'attr' - имя атрибута, который будет проверен
+							'eq' - присутствует, когда есть требование к значению атрибута. Возможные значения: "=", "!=", "~=", "|=", "^=", "$=", "*="
+							'attr_v' - присутствует, когда есть требование к значению атрибута. Содержит требуемое значение (без кавычек по бокам).
+							'inv' - отрицание условия. Если присутствует, то результат проверки (bool) должен быть инвертирован.
 						'pseudo' - присутствует, когда у описателя имеются псевдоклассы и/или псевдоэлементы. Может иметь сразу несколько псевдоклассов, которые могут быть разделены пробелами (или не разделены). 
 							Примеры: ":active", "::after", " :checked :enabled::after"
 					Всегда присутствует как минимум одно поле из перечисленных.
@@ -188,18 +236,27 @@ class html {
 					$prev_combinator = $xv['combinator'];
 					continue;
 				}
+				$req['attrs'] = $xv['attrs'];
 				if (preg_match_all('~[@#\.]?[\w\-]+~', $xv['tag'], $m2))
 				{
 					foreach ($m2[0] as $v)
 					{
 						switch ($v{0})
 						{
-							case '#': $req['ids'][] = substr($v, 1); break;
-							case '.': $req['classes'][] = substr($v, 1); break;
+							case '#':
+								$req['id'] = substr($v, 1);
+							break;
+							case '.':
+								$tn = substr($v, 1);
+								$req['attrs'][] = ['attr'=>'class', 'eq'=>'~=', 'attr_v'=>$tn];
+							break;
 							case '@':
-								if (preg_match('#^@(text|comment)$#', $v, $m3))
-								{$req['texcom'] = '#'.$m3[1];}
-								if (preg_match('#^@attr_([\w\-]+)$#', $v, $m3))
+								if ($v=='@text' || $v=='@comment')
+								{
+									$v{0} = '#';
+									$req['texcom'] = $v;
+								}
+								elseif (preg_match('#^@attr_([\w\-]+)$#', $v, $m3))
 								{$req['get_attr'][] = $m3[1];}
 							break;
 							default:
@@ -214,10 +271,6 @@ class html {
 					{$req['pseudos'][] = trim($v);}
 					$req['pseudos'] = array_filter($req['pseudos']);
 				}
-				
-				// докопировать недостающие
-				foreach (['attr', 'eq', 'attr_v', 'no_attr'] as $v)
-				{if (isset($xv[$v])) $req[$v] = $xv[$v];}
 				
 				if (!$prev_combinator) $last_found = [$this];
 				foreach ($last_found as $iter_c)
@@ -239,10 +292,7 @@ class html {
 						break;
 					}
 					
-					$i_node->iterate(function($e, $level)use($allow_recurse, &$found, $iter_c, &$req, &$need, $prev_combinator){
-						// выйти, когда рекурсивный обход не требуется
-						if (!$allow_recurse && $level) return true;
-						
+					$fnc = function($e, $level)use($allow_recurse, &$found, $iter_c, &$req, &$need, $prev_combinator, $i_node){
 						// пустой цикл - из него будем выскакивать когда не найдено
 						do {
 							if ($e->tag!==NULL)
@@ -251,44 +301,45 @@ class html {
 								if (!$req['texcom'] && $e->tag{0}=='#') continue;
 								if ($req['texcom'] && $e->tag!=$req['texcom']) continue;
 								$a = $e->attrs();
-								if (isset($req['attr']))
+								if ($req['id']!==NULL && $a['id']!==$req['id']) continue;
+								$conti = false;
+								foreach ($req['attrs'] as $va)
 								{
-									$conti = false;
-									switch ($req['eq'])
+									$def = false;
+									$a_v = $a[$va['attr']];
+									// не забываем, $conti - условие выхода! (т.е. когда элемент НЕ найден и/или не совпал)
+									switch ($va['eq'])
 									{
-										case '':
-											if ($req['no_attr'])
-											{if (isset($a[$req['attr']])) $conti = true;}
-												else
-											{if (!isset($a[$req['attr']])) $conti = true;}
-										break;
 										case '=':
-											if ($req['attr_v'] !== $a[$req['attr']]) $conti = true;
+											$conti = ($va['attr_v'] !== $a_v);
 										break;
 										case '!=':
-											if ($req['attr_v'] === $a[$req['attr']]) $conti = true;
+											$conti = ($va['attr_v'] === $a_v);
 										break;
 										case '~=':
-											if (!preg_match('#(^|\s)'.preg_quote($req['attr_v'], '#').'($|\s)#', $a[$req['attr']])) $conti = true;
+											$conti = (!preg_match('#(^|\s)'.preg_quote($va['attr_v'], '#').'($|\s)#', $a_v));
 										break;
 										case '|=':
-											if (!preg_match('#^'.preg_quote($req['attr_v'], '#').'($|\s|\-)#', $a[$req['attr']])) $conti = true;
+											$conti = (!preg_match('#^'.preg_quote($va['attr_v'], '#').'($|\s|\-)#', $a_v));
 										break;
 										case '^=':
-											if (substr($a[$req['attr']], 0, strlen($req['attr_v'])) !== $req['attr_v']) $conti = true;
+											$conti = (substr($a_v, 0, strlen($va['attr_v'])) !== $va['attr_v']);
 										break;
 										case '$=':
-											if (substr($a[$req['attr']], -strlen($req['attr_v'])) !== $req['attr_v']) $conti = true;
+											$conti = (substr($a_v, -strlen($va['attr_v'])) !== $va['attr_v']);
 										break;
 										case '*=':
-											if (strpos($a[$req['attr']], $req['attr_v'])===FALSE) $conti = true;
+											$conti = (strpos($a_v, $va['attr_v'])===FALSE);
+										break;
+										default:
+											// когда 'eq' пуст
+											$conti = ($a_v===NULL);
+											$def = true;
 										break;
 									}
-									if ($conti) continue;
+									if (($def || $allow_extensions) && $va['inv']) $conti = (!$conti);
+									if ($conti) continue(2);
 								}
-								$e_classes = (isset($a['class'])?array_filter(preg_split('#\s+#', $a['class'])):[]);
-								if ($req['classes'] && !array_intersect($req['classes'], $e_classes)) continue;
-								if ($req['ids'] && (!isset($a['id']) || !in_array($a['id'], $req['ids']))) continue;
 								if (!$req['pseudos']) $req['pseudos'] = [];
 								foreach ($req['pseudos'] as $p)
 								{
@@ -322,29 +373,33 @@ class html {
 											}
 										break;
 										case 'checked':
-											if (!(($e->tag=='input' && isset($a['checked'])) ||
-												($e->tag=='option' && isset($a['selected'])))) $conti2 = true;
+											$conti2 = (!
+												(
+													($e->tag=='input' && isset($a['checked'])) ||
+													($e->tag=='option' && isset($a['selected']))
+												)
+											);
 										break;
 										case 'root':
-											if ($e->parent->tag!==NULL) $conti2 = true;
+											$conti2 = ($e->parent->tag!==NULL);
 										break;
 										case 'required':
-											if (!isset($a['required'])) $conti2 = true;
+											$conti2 = (!isset($a['required']));
 										break;
 										case 'optional':
-											if (isset($a['required'])) $conti2 = true;
+											$conti2 = isset($a['required']);
 										break;
 										case 'read-only':
-											if (!isset($a['readonly'])) $conti2 = true;
+											$conti2 = (!isset($a['readonly']));
 										break;
 										case 'read-write':
-											if (isset($a['readonly'])) $conti2 = true;
+											$conti2 = isset($a['readonly']);
 										break;
 										case 'contains':
-											if (mb_stripos($e->outer(), $ps)===FALSE) $conti2 = true;
+											$conti2 = (mb_stripos($e->outer(), $ps)===FALSE);
 										break;
 										case 'notcontains':
-											if (mb_stripos($e->outer(), $ps)!==FALSE) $conti2 = true;
+											$conti2 = (mb_stripos($e->outer(), $ps)!==FALSE);
 										break;
 										case 'first': $need['first'] = true; break;
 										case 'last': $need['last'] = true; break;
@@ -356,19 +411,19 @@ class html {
 											$need[$p] = (int)trim($ps);
 										break;
 										case 'header':
-											if (!in_array($e->tag, ['h1', 'h2', 'h3', 'h4', 'h5', 'h6'])) $conti2 = true;
+											$conti2 = (!in_array($e->tag, ['h1', 'h2', 'h3', 'h4', 'h5', 'h6']));
 										break;
 										case 'hidden':
-											if (!preg_match('#display\s*:\s*none|visibility\s*:\s*hidden#i', $a['style'])) $conti2 = true;
+											$conti2 = (!preg_match('#display\s*:\s*none|visibility\s*:\s*hidden#i', $a['style']));
 										break;
 										case 'enabled':
-											if (isset($a['disabled'])) $conti2 = true;
+											$conti2 = isset($a['disabled']);
 										break;
 										case 'disabled':
-											if (!isset($a['disabled'])) $conti2 = true;
+											$conti2 = (!isset($a['disabled']));
 										break;
 										case 'empty':
-											if ($e->children) $conti2 = true;
+											$conti2 = (bool)$e->children;
 										break;
 										case 'first-of-type':
 										case 'last-of-type':
@@ -392,7 +447,7 @@ class html {
 											}
 										break;
 										case 'only-child':
-											if (count($e->parent->children) > 1) $conti2 = true;
+											$conti2 = (count($e->parent->children) > 1);
 										break;
 										case 'nth-child':
 										case 'nth-last-child':
@@ -431,25 +486,26 @@ class html {
 												{$nn++;}
 											}
 											// не нашли
-											if (!$e_found) $conti2 = true;
+											$conti2 = (!$e_found);
 										break;
 										case 'lang':
 											$ps = strtolower($ps);
-											if (strtolower(substr($a['lang'], 0, strlen($ps))) != $ps) $conti2 = true;
+											$conti2 = (strtolower(substr($a['lang'], 0, strlen($ps))) != $ps);
 										break;
 										case 'not':
 											$ps = explode(',', $ps);
 											foreach ($ps as $v)
 											{
 												$v = trim($v);
-												if (($v{0}=='#' && $a['id']==substr($v, 1)) ||
-													($v{0}=='.' && in_array(substr($v, 1), $e_classes)) ||
-													($e->tag==$v)
-												)
+												$tn = substr($v, 1);
+												$conti2 = ($e->tag==$v || ($v{0}=='#' && $a['id']==$tn));
+												if (!$conti2 && $v{0}=='.')
 												{
-													$conti2 = true;
-													break;
+													if ($e_classes===NULL)
+													{$e_classes = (isset($a['class'])?preg_split('#\s+#', $a['class']):[]);}
+													$conti2 = in_array($tn, $e_classes);
 												}
+												if ($conti2) break;
 											}
 										break;
 									}
@@ -492,14 +548,22 @@ class html {
 									foreach ($req['get_attr'] as $srch)
 									{
 										if (isset($a[$srch]))
-										{$found[] = html_node($a[$srch]);}
+										{$found[] = html::node($a[$srch]);}
 									}
 								}
 									else
 								{$found[] = $e;}
 							}
 						} while (false);
-					});
+					};
+					if ($allow_recurse)
+					{$i_node->iterate($fnc);}
+						else
+					{
+						// когда рекурсивный обход не требуется
+						foreach ($i_node->children as $e)
+						{($fnc)($e, 0);}
+					}
 				}
 				foreach ($need as $k=>$v)
 				{
@@ -570,7 +634,7 @@ class html {
 		$queue = array_values($this->children);
 		while ($e = $queue[$qkey++])
 		{
-			if ($e->is_text)
+			if ($e->tag==='#text')
 			{
 				$e->tag_block = trim($e->tag_block);
 				if (!strlen($e->tag_block))
@@ -605,9 +669,9 @@ class html {
 				if (reset($e->parent->children)!==$e) $s = '';
 				
 				if (strlen($s))
-				{$e->replace([html_node($s), $e]);}
+				{$e->replace([html::node($s), $e]);}
 				if (strlen($s2))
-				{$e->replace([$e, html_node($s2)]);}
+				{$e->replace([$e, html::node($s2)]);}
 			}
 			foreach ($e->children as $ee)
 			{$queue[] = $ee;}
@@ -633,6 +697,22 @@ class html {
 			{$queue[] = $ee;}
 		}
 		$this->invalidate();
+	}
+	
+	// удалить специальные теги ('script', 'style', 'noscript', 'noframes', 'noembed') среди потомков текущего элемента.
+	public function remove_specials()
+	{
+		$qkey = 0;
+		$queue = [$this];
+		while ($e = $queue[$qkey++])
+		{
+			if (in_array($e->tag, ['script', 'style', 'noscript', 'noframes', 'noembed', ]))
+			{
+				$e->remove();
+				continue;
+			}
+			foreach ($e->children as $ee) $queue[] = $ee;
+		}
 	}
 	
 	// для текущего элемента (и всех элементов рекурсивно внутри) удалить атрибуты, отвечающие за HTML-события, т.е. имеющие в названии приставку "on*".
@@ -663,7 +743,7 @@ class html {
 	{
 		$res = [];
 		foreach ($this->children as $v)
-		{if (!$v->is_text) $res[] = $v;}
+		{if ($v->tag!=='#text') $res[] = $v;}
 		return $res;
 	}
 	
@@ -680,17 +760,20 @@ class html {
 	}
 	
 	/*	Обработать колбеком все суб-узлы внутри текущего узла (включая вложенные, исключая сам тег).
-		Самый обычный и последовательный обход. Идем словно курсором.
+		Самый обычный и последовательный обход. Идем словно курсором, спускаясь на уровень вниз, когда это возможно.
 		
 		Параметры:
+		
 			$callback - замыкание или имя функции. Имеет формат:
-				function($node, $level){
+				function($node, $level, &$skip){
 					// ...
 				}
 				, где:
-					$node - очередной узел, 
-					$level - уровень вложенности (целое число от 0 и выше).
-			Если колбек вернет TRUE, то обход будет прекращен.
+					$node - очередной узел
+					$level - (число) уровень вложенности (целое число от 0 и выше)
+					&$skip - (bool) если поставить в true, то обход потомков данного узла произведен не будет. Тем самым можно пропускать ненужные ветви.
+			
+			Если колбек вернет TRUE, то обход будет полностью прекращен. При этом возвращенное колбеком значение будет передано как результат вызова функции.
 		
 		Если важна скорость и не важен порядок обработки, то лучше делать обход полностью вручную. Пример:
 		(порядок перебора будет другой!)
@@ -700,8 +783,10 @@ class html {
 			$queue = [$start_node];
 			while ($e = $queue[$qkey++])
 			{
-				foreach ($e->children as $ee)
-				{$queue[] = $ee;}
+				// обработка
+				// ...
+				// добавляем следующие узлы в очередь. Можно по желанию пропускать целые ветви
+				foreach ($e->children as $ee) $queue[] = $ee;
 			}
 	*/
 	public function iterate($callback)
@@ -739,7 +824,7 @@ class html {
 			{return $res;}
 			if (($v = ($attrs_cache[$this->tag_block]))!==NULL)
 			{return $v;}
-			if (preg_match_all('#([\w\-]+)=?("[^"<>]*"|\'[^\'<>]*\'|[^\s<>]*)#si', preg_replace('#^<[^\s<>]+#', '', $this->tag_block), $m, PREG_SET_ORDER))
+			if (preg_match_all('#([\w\-]+)(?:\s*=\s*("[^"<>]*"|\'[^\'<>]*\'|[^\s<>=]*))?#si', preg_replace('#^<[^\s<>]+#', '', $this->tag_block), $m, PREG_SET_ORDER))
 			{
 				foreach ($m as $mm)
 				{
@@ -770,7 +855,7 @@ class html {
 			{return;}
 			$z = [];
 			foreach ($values as $k=>$v) $z[] = $k.'="'.htmlspecialchars($v).'"';
-			$this->tag_block = $m[1].((!$z || ord(substr($m[1],-1))<=32)?'':' ').implode(' ', $z).$m[2];
+			$this->tag_block = ($z?$m[1]:rtrim($m[1])).(($z && !preg_match('#\s$#', $m[1]))?' ':'').implode(' ', $z).$m[2];
 			$this->invalidate();
 		}
 	}
@@ -963,12 +1048,56 @@ class html {
 		Возвращает строку.
 		Функция статическая - может быть вызвана без создания класса.
 	*/
-	public static function render($nodes)
+	static public function render($nodes)
 	{
 		$res = '';
 		foreach ($nodes as $elem)
 		{html::get_content($elem, $res);}
 		return $res;
+	}
+	
+	/*	Упаковать список узлов в общий (корневой) тег.
+			$nodes - массив узлов
+		Вернет объект узла.
+	*/
+	static public function pack($nodes)
+	{
+		$x = new html();
+		$x->replace($nodes);
+		return $x;
+	}
+	
+	/*	Создать *текстовый* узел (либо узел-комментарий) на основе заданного текста и вернуть его.
+		Он не будет корневым, так что его сразу можно использовать.
+		(!) Внимание: возвращается только первый узел! Т.е. нельзя пихать разметку. Функция предназначена только для текстовых или одиночных узлов! (или html-комментариев, опять же - одиночных).
+		Отлично подойдёт для того, чтобы создать узел для добавления некоего текстового маркера в дерево (и к примеру, дальнейшей его обработки регулярками).
+		Вернет объект узла.
+	*/
+	static public function node($s)
+	{
+		$h = new html();
+		$h->outer((string)$s);
+		return $h->children[0];
+	}
+	
+	/*	Составить CSS-селектор для поиска текущего DOM-узла.
+			$ex_attrs - (массив) имена атрибутов, которые не будут использоваться для идентификации
+		Поднимается вверх по родителям и использует имеющиеся в них атрибуты, исключая заданные ($ex_attrs).
+	*/
+	public function generate_selector($ex_attrs = ['id', 'class', ])
+	{
+		$css = [];
+		$node = $this;
+		$ex = array_flip($ex_attrs);
+		do {
+			$a = $node->attrs();
+			if (!($c = $node->tag)) continue;
+			if ($ex) $a = array_diff_key($a, $ex);
+			foreach ($a as $k=>$v) $c .= '['.$k.']';
+			$css[] = $c;
+		} while ($node = $node->parent);
+		$css = array_reverse($css);
+		return implode(' > ', $css);
 	}
 	
 	// с кешированием, содержимое без разметки, без пробелов по бокам
@@ -1044,6 +1173,56 @@ class html {
 		return $res;
 	}
 	
+	/*	Найти отличия между 2 узлами.
+			$c1 - один узел
+			$c2 - второй узел
+			$res - (массив) куда поместить результат
+		В массив $res будет добавлен список узлов (потомков $c1), которые явно отличаются от соответствующих потомков $c2.
+		Как правило, это и есть основной контент страницы.
+	*/
+	static public function compare($c1, $c2, &$res)
+	{
+		$arr = [[], [], ];
+		$ex = ['#comment', '#text'];
+		foreach ([$c1, $c2] as $k=>$cc)
+		{
+			foreach ($cc->children as $v)
+			{
+				if (!in_array($v->tag, $ex))
+				{$arr[$k][$v->strip()] = [$k, $v];}
+			}
+		}
+		$arr3 = array_diff_key($arr[0], $arr[1]);
+		$arr4 = array_diff_key($arr[1], $arr[0]);
+		$arr5 = array_merge(array_values($arr3), array_values($arr4));
+		$z = [[], [], ];
+		foreach ($arr5 as $v)
+		{
+			list($n, $v) = $v;
+			$z[$n][] = $v;
+		}
+		list($arr1, $arr2) = $z;
+		if (count($arr1)!=count($arr2))
+		{
+			// if ($from_second_too && !$arr1)
+			// {$arr1 = $arr2;}
+			if ($arr1)
+			{
+				$x = reset($arr1);
+				$res[] = $x->parent;
+				return;
+			}
+		}
+		// здесь $arr1 и $arr2 имеют одинаковый размер
+		reset($arr2);
+		foreach ($arr1 as $v1)
+		{
+			$v2 = current($arr2);
+			next($arr2);
+			html::compare($v1, $v2, $res);
+		}
+	}
+	
 	/*	Найти узел, который является (максимально глубоким) общим родителем для переданного списка узлов.
 			$nodes - список узлов
 		Вернет узел или NULL, если такого узла не существует.
@@ -1103,7 +1282,7 @@ class html {
 	}
 	
 	/*	Поиск узлов минимального размера, содержащих данную регулярку (т.е. последний узел в ветви перед тем как регулярка перестанет срабатывать при переходе к более глубоким узлам).
-			$reg - регулярка
+			$reg - регулярка, либо узел. В случае узла просто проверит - имеется ли данный узел среди потомков текущего узла (включая текущий).
 			$strip - искать ли только в текстах (т.е. по результату strip_tags())
 		Вернет массив узлов.
 		Примечание: в роли $reg можно передать узел, тогда вернет массив из одного элемента, если он присутствует где-либо внутри заданного или является им (или пустой массив, если нет).
@@ -1236,7 +1415,7 @@ class html {
 	
 	protected static function get_stripped_content($tag, &$res)
 	{
-		if ($tag->is_text)
+		if ($tag->tag==='#text')
 		{$res .= $tag->tag_block;}
 			else
 		{
@@ -1265,7 +1444,6 @@ class html {
 		{
 			$x_obj = $this->new_tag();
 			$x_obj->tag = '#text';
-			$x_obj->is_text = true;
 			$x_obj->tag_block = '';
 			$x_obj->parent = $this;
 			$x_obj->parent->children = [$x_obj];
@@ -1308,7 +1486,6 @@ class html {
 				$this->try_add_text_node($html, $last_opened_or_closed_tag_offset, $offset, $curr_parent);
 				$comment = $this->new_tag();
 				$comment->tag = '#comment';
-				$comment->is_comment = true;
 				$comment_started_at = $offset;
 				$comment->parent = $curr_parent;
 				$comment->parent->children[] = $comment;
@@ -1446,7 +1623,6 @@ class html {
 				{
 					$x_obj = $this->new_tag();
 					$x_obj->tag = '#text';
-					$x_obj->is_text = true;
 					$x_obj->tag_block = $tag_block;
 					$x_obj->parent = $curr_parent;
 					$x_obj->parent->children[] = $x_obj;	
@@ -1473,25 +1649,7 @@ class html {
 		$offset += strlen($tag->closer);
 		$res .= $tag->closer;
 	}
-	
-	// protected function iterate_recurs($tag, $level, $callback)
-	// {
-		// foreach ($tag->children as $tag2)
-		// {
-			// if ((($callback)($tag2, $level)) || $this->iterate_recurs($tag2, $level+1, $callback))
-			// {return true;}
-		// }
-	// }
-	
-	// protected function iterate_recurs_reverse($tag, $level, $callback)
-	// {
-		// foreach (array_reverse($tag->children) as $tag2)
-		// {
-			// if ((($callback)($tag2, $level)) || $this->iterate_recurs_reverse($tag2, $level+1, $callback))
-			// {return true;}
-		// }
-	// }
-	
+		
 	protected function iterate_recurs($node, $reverse, $callback)
 	{
 		$stack = [['node' => $node, ], ];
@@ -1507,9 +1665,12 @@ class html {
 			}
 			if ($node = $cur['iter']->current())
 			{
-				if ($res = ($callback)($node, $level)) return $res;
+				$skip = false;
+				if ($res = ($callback)($node, $level, $skip))
+				{return $res;}
 				$cur['iter']->next();
-				$stack[] = ['node' => $node, ];
+				if (!$skip)
+				{$stack[] = ['node' => $node, ];}
 			}
 				else
 			{array_pop($stack);}
@@ -1527,21 +1688,165 @@ class html {
 		if ($offset-$prev_offset <= 0) return;
 		$t_obj = $this->new_tag();
 		$t_obj->tag = '#text';
-		$t_obj->is_text = true;
 		$t_obj->tag_block = substr($html, $prev_offset, $offset-$prev_offset);
 		$t_obj->parent = $curr_parent;
 		$t_obj->parent->children[] = $t_obj;
 	}
 }
 
-// создать узел на основе указанного текста и вернуть его.
-// он не будет корневым, так что его сразу можно использовать.
-// (!) внимание, возвращается только первый узел! Функция предназначена только для текстовых или одиночных узлов! (или html-комментариев, опять же - одиночных)
-// отлично подойдёт чтобы впихнуть текстовый маркер для дальнейшей обработки регулярками.
-// запомните, что не надо выполнять сложные действия путём перетаскивания DOM-узлов в виде объектов!
-function html_node($s)
+
+	
+/*	Абсолютизирует URL.
+		$rel_url - исходный относительный (или абсолютный) URL
+		$base_url - абсолютный URL страницы, где был найден исходный URL (можно с http:// или без).
+	Возвращает абсолютный URL.
+	Работает согласно стандартам, так же, как это делают современные браузеры. 
+	Если $base_url имеет неизвестную схему URL (отличающуюся от 'http', 'https', 'ftp'), либо если она отсутствует, то она будет заменена на 'http'.
+	Если $rel_url содержит email-адрес или другую неизвестную схему URL (javascript, mailto, skype, итд), то функция вернет $base_url без изменений.
+	А именно, поддерживаются:
+		- пустой относительный URL (означает текущий адрес)
+		- использование схемы URL из базового URL (когда $rel_url начинается на "//")
+		- относительные в рамках текущей папки
+		- относительные (содержащие "./" и "/./"), означает адрес текущей директории
+		- относительные с переходом вверх по папке (содержат "../")
+		- относительные от корня (начинаются на "/")
+		- относительные от знака вопроса (начинаются на "?")
+		- относительные от хеша (начинаются на "#")
+	Функция хорошо протестирована.
+*/
+function url_abs($rel_url, $base_url)
 {
-	$h = new html();
-	$h->outer((string)$s);
-	return $h->children[0];
+	$rel_url = trim($rel_url);
+	if (!preg_match('#^(https?|ftp)://#i', $base_url))
+	{$base_url = 'http://'.$base_url;}
+	if (preg_match('#^//[\w\-]+\.[\w\-]+#i', $rel_url))
+	{$rel_url = parse_url($base_url, PHP_URL_SCHEME).':'.$rel_url;}
+	if (!strlen($rel_url))
+	{return $base_url;}
+	if (preg_match('#^(https?|ftp)://#i', $rel_url))
+	{return $rel_url;}
+	if (preg_match('#^[a-z]+:#i', $rel_url))
+	{return $base_url;}
+	if (in_array($rel_url{0}, ['?', '#']))
+	{return reset(explode($rel_url{0}, $base_url, 2)).$rel_url;}
+	$p = parse_url($base_url);
+	$pp = (($rel_url{0}=='/')?'':preg_replace('#/[^/]*$#', '', $p['path']));
+	$abs = $p['host'].$pp.'/'.$rel_url;
+	if (!preg_match('#^(https?|ftp)$#i', $p['scheme']))
+	{$p['scheme'] = 'http';}
+	if (preg_match('#^(.*?)([\?\#].*)$#s', $abs, $m))
+	{$abs = $m[1];}
+	do {$abs = preg_replace(['#(/\.?/)#', '#/(?!\.\.)[^/]+/\.\./#'], '/', $abs, -1, $n);}
+	while ($n>0);
+	do {$abs = preg_replace('#/\.\./#', '/', $abs, -1, $n);}
+	while ($n>0);
+	$abs .= $m[2];
+	$s = $p['scheme'].'://'.$abs;
+	return $s;
+}
+
+/*	Заменить "голые" домены и URL на содержимое, задаваемое функцией, либо на пустую строку.
+	Ищет очень точно URLы и домены. Неправильные домены игнорирует.
+	Учитывает newTLD домены и Punycode-домены. Учитывает домены с точкой на конце.
+	Поможет очистить строку от *текстовых* внешних ссылок и упоминаний сторонних доменов.
+		$s - строка
+		$func - функция вида: function($url){ ... }
+			Должна вернуть строку, которой будет заменен найденный URL.
+			Если не задана, то домены будут просто удалены.
+	Внимание! Замены не производится в следующих случаях:
+		- URL находящиеся внутри HTML-атрибутов: "href", "src", "srcset", "action", "data", "poster", "cite"
+		- URL находящиеся внутри CSS-конструкции: url("...")  либо  url(...)
+		- URL заключенные в некоторый HTML-тег, т.е. находящиеся внутри (определяются эвристически)
+*/
+function url_replace($s, $func = NULL)
+{
+	// + полное доменное имя не может быть длиннее 255 символов
+	$r = '#(?<=[^\w\.\-]|^)((https?:)?//)?[a-z\d\-]{1,63}(\.[a-z\d\-]{1,63}){0,5}\.(?!aac|ai|aif|apk|arj|asp|aspx|atom|avi|bak|bat|bin|bmp|cab|cda|cer|cfg|cfm|cgi|class|cpl|cpp|cs|css|csv|cur|dat|db|dbf|deb|dll|dmg|dmp|doc|drv|ejs|eot|eps|exe|flv|fnt|fon|gif|gz|htm|icns|ico|img|ini|iso|jad|jar|java|jpeg|jpg|js|json|jsp|key|lnk|log|mdb|mid|midi|mkv|mov|mpa|mpeg|mpg|msi|odf|odp|ods|odt|ogg|otf|part|pdf|php|pkg|pls|png|pps|ppt|pptx|psd|py|rar|rm|rpm|rss|rtf|sav|sql|svg|svgz|swf|swift|sys|tar|tex|tgz|tif|tmp|toast|ttf|txt|vb|vcd|vob|wav|wbmp|webm|webp|wks|wma|wmv|woff|wpd|wpl|wps|wsf|xhtml|xlr|xls|xml|zip)(xn--[a-z\d\-]{1,63}|[a-z]{2,11})(:\d+)?((?=[^\w\.\-]|$)[^\[\]<>"\']*?(?=$|[^a-z\-\d/\.])|(?=\.$|\.\s|\.\.))#ui';
+	if (!preg_match_all($r, $s, $m, PREG_OFFSET_CAPTURE)) return $s;
+	$m = $m[0];
+	if (!$func) $func = function(){return;};
+	foreach ($m as &$mm)
+	{
+		$x = max(0, $mm[1]-4000);
+		$q = substr($s, $x, $mm[1]-$x);
+		$q2 = substr($s, $mm[1]+strlen($mm[0]), 4000);
+		$host = parse_url('http://'.preg_replace(['#^https?:#i', '#^//#'], '', $mm[0]), PHP_URL_HOST);
+		if (strlen($host)>255 || 
+			preg_match('#(=["\']|(\s(href|src|srcset|action|data|poster|cite)=|\burl\()["\']?)[^"\'<>\(\)\n]*$#i', $q) ||
+			(preg_match('#>\s*$#', $q) && preg_match('#^\s*</#', $q2))
+		) continue;
+		$mm['func'] = $func($mm[0]);
+	}
+	unset($mm);
+	$prev = 0; $res = '';
+	foreach ($m as &$mm)
+	{
+		$res .= substr($s, $prev, $mm[1]-$prev).(array_key_exists('func', $mm)?$mm['func']:$mm[0]);
+		$prev = $mm[1]+strlen($mm[0]);
+	}
+	$res .= substr($s, $prev);
+	return $res;
+}
+
+/*	Скачивает контент по указанному URL.
+	Использует CURL, а если его нет, то file_get_contents().
+		$url - ссылка для запроса
+		$allow_404 - возвращать содержимое даже для страниц с кодом ответа 404 (если отключено, то будет возвращать NULL).
+		$timeout - таймаут запроса
+	Возвращает массив вида:
+		['исходный код страницы', 'содержимое HTTP-заголовка Content-Type', 'текст ошибки']
+*/
+function cu_download($url, $allow_404 = true, $timeout = 20)
+{
+	$url = preg_replace('/#.*/', '', $url);
+	if (!function_exists('curl_init'))
+	{
+		$res = @file_get_contents($url, false, stream_context_create(['http'=>compact('timeout'), ]));
+		if ($res===FALSE)
+		{
+			$err = error_get_last();
+			$err = $err['message'];
+			$ct = [];
+		}
+			else
+		{
+			$ct = $http_response_header;
+			if (!$ct) $ct = [];
+			$ct = preg_grep('#^content-type:#i', $ct);
+			if ($ct = reset($ct))
+			{$ct = rtrim(preg_replace('#^[^:]+:\s*#', '', $ct), "\r\n");}
+		}
+	}
+	elseif ($ch = curl_init())
+	{
+		@curl_setopt_array($ch, [
+			CURLOPT_URL => $url,
+			CURLOPT_REFERER => $url,
+			CURLOPT_RETURNTRANSFER => true,
+			CURLOPT_SSL_VERIFYPEER => false,
+			CURLOPT_SSL_VERIFYHOST => false,
+			CURLOPT_CONNECTTIMEOUT => 10,
+			CURLOPT_TIMEOUT => $timeout,
+			CURLOPT_USERAGENT => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:64.0) Gecko/20100101 Firefox/64.0',
+			CURLOPT_HEADER => 1,
+			CURLOPT_HTTPHEADER => [
+				'Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8', 
+				'Accept-Language: en-us,en;q=0.5',
+			],
+			CURLOPT_ENCODING => 'gzip, deflate',
+			CURLOPT_FOLLOWLOCATION => true,
+		]);
+		$res = curl_exec($ch);
+		$code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+		if (!$allow_404 && $code==404)
+		{$res = NULL;}
+		$header_size = curl_getinfo($ch, CURLINFO_HEADER_SIZE);
+		$ct = curl_getinfo($ch, CURLINFO_CONTENT_TYPE);
+		$header = substr($res, 0, $header_size);
+		$res = substr($res, $header_size);
+		$error = curl_error($ch);
+		// echo 'CURL ERROR: '.$err."\n\n";
+		curl_close($ch);
+	}
+	return [$res, $ct, $error];
 }
