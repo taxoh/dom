@@ -459,17 +459,38 @@ class html {
 											if (in_array($p, ['nth-last-of-type', 'nth-last-child']))
 											{$z = array_reverse($z);}
 											if (is_numeric($ps))
-											{$calc[] = floor($ps);}
+											{
+												$ps2 = floor($ps);
+												if ($ps2 >= 1) $calc[$ps2] = true;
+											}
 												else
 											{
 												if ($ps=='even') {$ps = '2n';}
 												elseif ($ps=='odd') {$ps = '2n+1';}
-												preg_match('#^((?P<mul>[\+\-]?\s*[\d\.]+)?n)(?P<plus>\s*[+\-]\s*[\d\.]+)?$#', $ps, $m2);
-												$m2['mul'] = preg_replace('#\s+#', '', $m2['mul']);
-												$m2['plus'] = preg_replace('#\s+#', '', $m2['plus']);
-												if (!$m2['mul']) $m2['mul'] = 1;
+												$ps2 = preg_replace('#\s+#', '', $ps);
+												if (!preg_match('#^(?P<mul>[\+\-\d\.]*n)(?P<plus>[\+\-]*[\d\.]+)?$#', $ps2, $m2))
+												{preg_match('#^(?P<plus>[\+\-]*[\d\.]+)$#', $ps2, $m2);}
+												$ml = &$m2['mul'];
+												if ($ml=='')
+												{$ml = 0;}
+													else
+												{
+													$ml = str_ireplace('n', '', $ml);
+													switch ($ml)
+													{
+														case '':
+														case '+': 
+															$ml = 1;
+														break;
+														case '-': $ml = -1; break;
+													}
+												}
 												foreach (range(0, count($z)) as $q)
-												{$calc[] = floor($m2['mul']*$q + $m2['plus']);}
+												{
+													$ps3 = floor($ml*$q + $m2['plus']);
+													if ($ps3 >= 1) $calc[$ps3] = true;
+												}
+												unset($ml);
 											}
 											$of_type = in_array($p, ['nth-of-type', 'nth-last-of-type']);
 											$nn = 1;
@@ -479,7 +500,7 @@ class html {
 												if ($cc->tag{0}=='#') continue;
 												if ($cc===$e)
 												{
-													$e_found = in_array($nn, $calc);
+													$e_found = $calc[$nn];
 													break;
 												}
 												if (!$of_type || $cc->tag == $e->tag)
