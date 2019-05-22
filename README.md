@@ -10,7 +10,7 @@ HTML DOM parser / editor / beautifier / autocloser
 	
 		$p = new html();
 		$p->inner(file_get_contents('/tmp/somefile.html'));
-		$p->iterate(function($node, $level){
+		$p->iterate(function($node, &$ctrl){
 			if ($node->tag=='a')
 			{echo $node->inner().'<br>';}
 		});
