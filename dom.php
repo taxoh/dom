@@ -10,7 +10,7 @@
 	
 		$p = new html();
 		$p->inner(file_get_contents('/tmp/somefile.html'));
-		$p->iterate(function($node, $level){
+		$p->iterate(function($node, &$c){
 			if ($node->tag=='a')
 			{echo $node->inner().'<br>';}
 		});
@@ -37,7 +37,7 @@
 			- replace()
 			- replace_inner()
 		- поддерживается и корректно обрабатывается операция clone
-		- поддерживает красивый var_dump() для узлов (без гигантских листингов)
+		- поддерживает красивый var_dump() для узлов (без гигантских листингов, удобно)
 	
 */
 
@@ -59,7 +59,7 @@ define('HTML_CONTENT_TAGS', ['a', 'abbr', 'acronym', 'audio', 'b', 'blockquote',
 // элементы, которые всегда подразумевают перенос строки (т.е. не могут собой разделять слова одного предложения)
 define('HTML_LINEBREAK_TAGS', ['audio', 'blockquote', 'br', 'cite', 'code', 'dd', 'dl', 'dt', 'embed', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'iframe', 'img', 'li', 'object', 'ol', 'p', 'picture', 'pre', 'ruby', 'table', 'td', 'th', 'ul', 'video', ]);
 // элементы, разрешенные спецификацией внутри <p> 
-define('HTML_ELEMENTS_PHRASING', ['a', 'abbr', 'area', 'audio', 'b', 'bdi', 'bdo', 'br', 'button', 'canvas', 'cite', 'code', 'command', 'datalist', 'del', 'dfn', 'em', 'embed', 'i', 'iframe', 'img', 'input', 'ins', 'kbd', 'keygen', 'label', 'map', 'mark', 'math', 'meter', 'noscript', 'object', 'output', 'progress', 'q', 'ruby', 's', 'samp', 'script', 'select', 'small', 'span', 'strong', 'sub', 'sup', 'svg', 'textarea', 'time', 'u', 'var', 'video', 'wbr', 'text']);
+define('HTML_ELEMENTS_PHRASING', ['a', 'abbr', 'area', 'audio', 'b', 'bdi', 'bdo', 'br', 'button', 'canvas', 'cite', 'code', 'command', 'datalist', 'del', 'dfn', 'em', 'embed', 'i', 'iframe', 'img', 'input', 'ins', 'kbd', 'keygen', 'label', 'map', 'mark', 'math', 'meter', 'noscript', 'object', 'output', 'progress', 'q', 'ruby', 's', 'samp', 'script', 'select', 'small', 'span', 'strong', 'sub', 'sup', 'svg', 'textarea', 'time', 'u', 'var', 'video', 'wbr', ]);
 // микроразметка: элементы, дающие конкретную классифицирующую информацию об определенных частях документа
 define('HTML_ELEMENTS_MICRO', ['abbr', 'acronym', 'address', 'article', 'aside', 'button', 'cite', 'code', 'dd', 'dfn', 'dt', 'footer', 'header', 'main', 'meta', 'nav', 'time', 'q', ]);
 // формы: элементы, связанные с веб-формами
@@ -112,8 +112,10 @@ class html {
 		Также имеются дополнительные нестандартные расширения CSS, а именно:
 		(псевдоклассы применяются в отрыве от комбинаторов)
 		
-			:contains("любой текст") - регистронезависимая проверка наличия текста внутри тега (включая outerText)
-			:notcontains("любой текст") - регистронезависимая проверка отсутствия текста внутри тега (включая outerText)
+			:contains("любой текст") - регистронезависимая проверка наличия текста внутри тега (проверяется outerHTML)
+			:notcontains("любой текст") - регистронезависимая проверка отсутствия текста внутри тега (проверяется outerHTML)
+			:icontains("любой текст") - регистронезависимая проверка наличия текста внутри тега (проверяется innerHMTL)
+			:inotcontains("любой текст") - регистронезависимая проверка отсутствия текста внутри тега (проверяется innerHMTL)
 			:header - собрать все заголовки (h1, h2, h3, ...)
 			:hidden - собирает элементы, имеющие в атрибуте "style" текст "display:none" либо "visibility:hidden" (ищет по регулярке, регистронезависимо)
 			:first - взять первый элемент среди найденных
@@ -126,6 +128,8 @@ class html {
 			:gt(-2) - ("greater") взять последний элемент среди найденных
 			:eq(0) - взять конкретный элемент по индексу (индексы начинаются с 0, как и в jQuery)
 			:eq(-2) - взять 2ой с конца
+			:not-parent(.someclass) - аналог ":not", но в отличие от него проверяется не сам тег, а его родитель. Поддерживается ограниченно. Позволяет у выбранных элементов проверить условие, чтобы прямой родитель НЕ обладал определенным классом, либо id, либо именем тега. Нельзя использовать сложные селекторы, но можно перечислить селекторы через запятые. Пример:
+				:not-parent(.myclass,#someid,anytag,.otherclass,.bar,#foo)
 		
 		А также:
 			
@@ -135,14 +139,16 @@ class html {
 			[!myattr~=flower] - (для атрибутов) еще один частный пример случая выше: атрибут "myattr" не должен содержать в значении фразу "flower".
 			@text - (в качестве имени тега) выборка текстовых узлов
 			@comment - (в качестве имени тега) выборка узлов-комментариев
-			@attr_href - (в качестве имени тега, а также наряду с ".class" и "#id" суффиксами) собрать атрибуты с заданным именем. В данном случае для примера это "href" (можно любые имена). Внимание! Результат будет содержать открепленные текстовые узлы, представляющие из себя значения найденных атрибутов в декодированном виде (т.к. атрибуты сами по себе узлами не являются).
+			@attr_href - (в качестве имени тега, а также можно применять в связке с ".class" и "#id" суффиксами) собрать атрибуты с заданным именем. В данном случае это "href". Вставлять нужно раньше атрибутных требований (это которые в квадратных скобках). Внимание! Результат будет содержать открепленные текстовые узлы, представляющие из себя значения найденных атрибутов в декодированном виде (т.к. атрибуты сами по себе узлами не являются). Пример парсинга значения мета-тега:
+			
+				meta@attr_content[name=description]
 		
 		Также имеются псевдоклассы и псевдоэлементы, которые в принципе невозможно прочитать/изменить без js: в таких случаях поведение будет словно соответствующая часть селектора отсутствует. Селекторы читаются согласно стандарту, поэтому можно подавать взятые прямо со стилей HTML-страниц из сети. Чтение и выполнение хорошо оттестированы и прекрасно работают во всех возможных режимах.
 		
 		Есть некоторые ограничения:
 		
 			- имена атрибутов в css-выражении (в секции требований к атрибутам) могут состоять только из символов: [\w\-]
-			- псевдокласс ":not" (из стандартной css-спецификации) поддерживается ограниченно: можно только одиночные имена тегов, либо одиночные классы, либо одиночные ID, а также можно несколько через запятую. Пример: 
+			- псевдокласс ":not" (из стандартной css-спецификации), а также псевдокласс ":not-parent" (наше расширение) поддерживаются ограниченно: можно только одиночное имя тега, либо одиночный класс, либо одиночный id, или же можно перечислить несколько селекторов такого типа через запятую. Примеры: 
 		
 				:not(span)
 				:not(.fancy)
@@ -164,10 +170,10 @@ class html {
 		// + опц. псевдоклассы во всех случаях, + опц. атрибут во всех случаях
 		$nth = '\(\s*(?:[\d\-\+n]+|odd|even)\s*\)';
 		if ($allow_extensions)
-		{$ext = '|odd|even|hidden|header|first|last|(?:eq|lt|gt)\(\s*\-?\d+\s*\)|(?:not)?contains\((?:"[^"]+"|\'[^\']+\'|[^\)]+)\)';}
+		{$ext = '|odd|even|hidden|header|first|last|(?:eq|lt|gt)\(\s*\-?\d+\s*\)|i?(?:not)?contains\((?:"[^"]+"|\'[^\']+\'|[^\)]+)\)';}
 		$gr = '(?P<tag>(?:@?[\w\-]*|\*)(?:[#\.@][\w\-]+)*)'.
 			'(?P<attrs>(?:\[.*?\])*)'.
-			'(?P<pseudo>(?:\s*(?::(?:active|checked|disabled|empty|enabled|first-child|first-of-type|last-of-type|focus|hover|in-range|invalid|last-child|link|not\([\w\-#\.,\s]+\)|only-child|target|valid|visited|root|read-write|lang\([\w\-]+\)|read-only|optional|out-of-range|only-of-type'.$ext.'|nth-of-type'.$nth.'|nth-last-of-type'.$nth.'|nth-last-child'.$nth.'|nth-child'.$nth.')|::(?:after|before|first-letter|first-line|selection)))*)';
+			'(?P<pseudo>(?:\s*(?::(?:active|checked|disabled|empty|enabled|first-child|first-of-type|last-of-type|focus|hover|in-range|invalid|last-child|link|not(?:-parent)?\([\w\-#\.,\s]+\)|only-child|target|valid|visited|root|read-write|lang\([\w\-]+\)|read-only|optional|out-of-range|only-of-type'.$ext.'|nth-of-type'.$nth.'|nth-last-of-type'.$nth.'|nth-last-child'.$nth.'|nth-child'.$nth.')|::(?:after|before|first-letter|first-line|selection)))*)';
 		$off = 0;
 		$buf = []; // текущая собираемая группа
 		$list = []; // список групп, которые нужно найти
@@ -292,7 +298,7 @@ class html {
 						break;
 					}
 					
-					$fnc = function($e, $level)use($allow_recurse, &$found, $iter_c, &$req, &$need, $prev_combinator, $i_node){
+					$fnc = function($e)use($allow_recurse, &$found, $iter_c, &$req, &$need, $prev_combinator, $i_node){
 						// пустой цикл - из него будем выскакивать когда не найдено
 						do {
 							if ($e->tag!==NULL)
@@ -400,6 +406,12 @@ class html {
 										break;
 										case 'notcontains':
 											$conti2 = (mb_stripos($e->outer(), $ps)!==FALSE);
+										break;
+										case 'icontains':
+											$conti2 = (mb_stripos($e->inner(), $ps)===FALSE);
+										break;
+										case 'inotcontains':
+											$conti2 = (mb_stripos($e->inner(), $ps)!==FALSE);
 										break;
 										case 'first': $need['first'] = true; break;
 										case 'last': $need['last'] = true; break;
@@ -514,16 +526,29 @@ class html {
 											$conti2 = (strtolower(substr($a['lang'], 0, strlen($ps))) != $ps);
 										break;
 										case 'not':
+										case 'not-parent':
+											if ($p=='not-parent')
+											{
+												$e2 = $e->parent;
+												$a2 = ($e2?$e2->attrs():[]);
+												$e2 = ($e2?$e2->tag:'-');
+											}
+												else
+											{
+												$e2 = $e->tag;
+												$a2 = $a;
+											}
+											unset($e_classes);
 											$ps = explode(',', $ps);
 											foreach ($ps as $v)
 											{
 												$v = trim($v);
 												$tn = substr($v, 1);
-												$conti2 = ($e->tag==$v || ($v{0}=='#' && $a['id']==$tn));
+												$conti2 = ($e2==$v || ($v{0}=='#' && $a2['id']==$tn));
 												if (!$conti2 && $v{0}=='.')
 												{
 													if ($e_classes===NULL)
-													{$e_classes = (isset($a['class'])?preg_split('#\s+#', $a['class']):[]);}
+													{$e_classes = (isset($a2['class'])?preg_split('#\s+#', $a2['class']):[]);}
 													$conti2 = in_array($tn, $e_classes);
 												}
 												if ($conti2) break;
@@ -582,8 +607,7 @@ class html {
 						else
 					{
 						// когда рекурсивный обход не требуется
-						foreach ($i_node->children as $e)
-						{($fnc)($e, 0);}
+						foreach ($i_node->children as $e) ($fnc)($e);
 					}
 				}
 				foreach ($need as $k=>$v)
@@ -782,25 +806,61 @@ class html {
 	
 	/*	Обработать колбеком все суб-узлы внутри текущего узла (включая вложенные, исключая сам тег).
 		Самый обычный и последовательный обход. Идем словно курсором, спускаясь на уровень вниз, когда это возможно.
+		Внимание! Замечания по поводу работы с узлами *во время* обработки, т.е. изнутри колбека:
+			Терминология: 
+				- "текущий обрабатываемый узел" (или "текущий узел") - это то, что передается в колбек в виде переменной $node.
+				- "состав" - это состав или порядок узлов
+				- "базовый узел" - это тот узел, от которого была вызвана функция.
+			Менять параметры любых узлов (исключая свойство children) всегда можно без предосторожностей, это безопасно. 
+			Как работает функция: перед обработкой детей очередного узла все его дети копируются в отдельный массив (итератор), по которому идёт обход. 
+			Поэтому! 
+				Нельзя менять составы детей *любых* предков текущего обрабываемого узла ($node). 
+				Нельзя менять состав *соседей* текущего обрабатываемого узла ($node). 
+				В том числе нельзя это делать через replace(), pull_up() и подобные функции. 
+				Но вы можете что угодно делать с потомками текущего обрабатываемого узла ($node->children или $node->children[...]...->children...) или с ним самим ($node).
+			Если удаляете текущий обрабатываемый узел ($node->remove()), то обязательно установите $ctrl['skip'] в true!
+			А если всё таки требуется изменение предков, то изменить их можно, но обработку нужно полностью отменить и начать заново, т.е.: 
+				- либо колбек должен вернуть true
+				- либо установите $ctrl['rewind_level'] в правильное значение. До того уровня, которого коснулись изменения. Например, если изменения коснулись состава детей базового узла ($this), то $ctrl['rewind_level'] нужно поставить в 0.
+			Во любом случае нужно полностью понимать, что делаешь! Иначе результаты будут непредсказуемыми.
 		
 		Параметры:
 		
 			$callback - замыкание или имя функции. Имеет формат:
-				function($node, $level, &$skip){
+				function($node, &$ctrl){
 					// ...
 				}
 				, где:
 					$node - очередной узел
-					$level - (число) уровень вложенности (целое число от 0 и выше)
-					&$skip - (bool) если поставить в true, то обход потомков данного узла произведен не будет. Тем самым можно пропускать ненужные ветви.
+					$ctrl - массив контроля за обработкой. Ключи:
+					
+						'level' - (int) (только для чтения) уровень текущей вложенности. Целое число >= 0.
+						'skip' - (bool) если поставить в true, то обход потомков текущего обрабатываемого узла ($node) произведен не будет.
+						'rewind_level' - (int) (cтрогая проверка на int!) уровень вложенности, до которого будет осуществлена перемотка (сброс) процесса обработки.
+							Если занести сюда значение, равное значению $ctrl['level'], то обработка начнется с первого ребенка родителя текущего обрабатываемого узла (т.е., попросту говоря, с первого "брата").
+							Если занести ($ctrl['level']-1), то обработка начнется с первого ребенка *родителя* *родителя* текущего обрабатываемого узла.
+							и так далее...
+							Если передать 0, то обработка начнется полностью заново.
+							Значения больше $ctrl['level'], либо ниже 0 передавать бессмысленно.
+							Если занести NULL - перемотка не будет осуществляться (так по-умолчанию).
+							С 'rewind_level' будьте осторожны, т.к. возможен бесконечный цикл!
+						'continue_level' - (int) (cтрогая проверка на int!) уровень, с которого требуется выскочить. Аналог continue у циклов.
+							Если занести сюда значение, равное значению $ctrl['level'], то узлы, находящиеся справа от текущего ("соседи справа") обработаны не будут.
+							Если занести ($ctrl['level']-1), то будет тоже самое, но обработаны не будут в том числе и соседи справа от *родителя* текущего узла.
+							и так далее...
+							Если передать 0, то обработка полностью прекратится.
+							Значения больше $ctrl['level'], либо ниже 0 передавать бессмысленно.
+							Если занести NULL - выскакивания не будет (так по-умолчанию).
 			
-			Если колбек вернет TRUE, то обход будет полностью прекращен. При этом возвращенное колбеком значение будет передано как результат вызова функции.
+			Если колбек вернет TRUE, то обход будет немедленно полностью прекращен. При этом возвращенное колбеком значение будет передано как результат вызова функции.
 		
-		Если важна скорость и не важен порядок обработки, то лучше делать обход полностью вручную. Пример:
-		(порядок перебора будет другой!)
+		Если важна скорость и не важен порядок обработки, то лучше делать обход полностью вручную.
+		Пример ручной обработки:
+		(внимание! порядок перебора узлов будет другой!)
 		
 			$qkey = 0;
-			// здесь аккуратнее: если передать $node->children, то его узлы могут иметь номера не по порядку, а это чревато! (поэтому сделайте array_values())
+			// здесь аккуратнее: если передать $node->children, то его узлы могут иметь номера не по порядку, а это чревато! 
+			// (поэтому сделайте array_values())
 			$queue = [$start_node];
 			while ($e = $queue[$qkey++])
 			{
@@ -1536,7 +1596,7 @@ class html {
 						case 'optgroup':
 						case 'html':
 							// если среди родителей у элементов этого типа попадается элемент такого же типа, то этот родитель закрывается
-							$blocked_parents = [$name];
+							$blocked_parents = [$name, ];
 						break;
 						case 'li':
 						case 'dd':
@@ -1573,6 +1633,11 @@ class html {
 							$stoppers[] = 'table';
 						break;
 					}
+					
+					// единственные теги, которые можно внутри h1-h6:
+					if (!in_array($name, ['tt', 'i', 'b', 'big', 'small', 'em', 'strong', 'dfn', 'code', 'samp', 'kbd', 'var', 'cite', 'abbr', 'acronym', 'a', 'img', 'object', 'br', 'script', 'map', 'q', 'sub', 'sup', 'span', 'bdo', 'input', 'select', 'textarea', 'label', 'button', ]))
+					{$blocked_parents = array_merge($blocked_parents, ['h1', 'h2', 'h3', 'h4', 'h5', 'h6', ]);}
+					
 					if ($blocked_parents)
 					{
 						$n = 0;
@@ -1678,20 +1743,39 @@ class html {
 		{
 			$level = count($stack)-1;
 			$cur = &$stack[$level];
-			if (!$cur['iter'])
+			if (!is_array($cur['iter']))
 			{
 				$z = $cur['node']->children;
-				if ($reverse) $z = array_reverse($z);
-				$cur['iter'] = new ArrayIterator($z);
+				if ($reverse)
+				{$z = array_reverse($z);}
+					else
+				{reset($z);}
+				$cur['iter'] = $z;
 			}
-			if ($node = $cur['iter']->current())
+			if ($node = current($cur['iter']))
 			{
-				$skip = false;
-				if ($res = ($callback)($node, $level, $skip))
+				$c = ['level' => $level, ];
+				if ($res = ($callback)($node, $c))
 				{return $res;}
-				$cur['iter']->next();
-				if (!$skip)
+				if (is_int($cl = $c['continue_level']))
+				{
+					$stack = array_slice($stack, 0, max(0, min($cl, $level)));
+					continue;
+				}
+				if (is_int($rl = $c['rewind_level']))
+				{
+					unset($cur['iter']);
+					if ($rl < $level)
+					{
+						unset($cur);
+						$rl = max(0, $rl);
+						$stack = array_slice($stack, 0, $rl+1);
+					}
+					continue;
+				}
+				if (!$c['skip'])
 				{$stack[] = ['node' => $node, ];}
+				next($cur['iter']);
 			}
 				else
 			{array_pop($stack);}
@@ -1805,6 +1889,7 @@ function url_replace($s, $func = NULL)
 		$res .= substr($s, $prev, $mm[1]-$prev).(array_key_exists('func', $mm)?$mm['func']:$mm[0]);
 		$prev = $mm[1]+strlen($mm[0]);
 	}
+	unset($mm);
 	$res .= substr($s, $prev);
 	return $res;
 }
@@ -1814,10 +1899,11 @@ function url_replace($s, $func = NULL)
 		$url - ссылка для запроса
 		$allow_404 - возвращать содержимое даже для страниц с кодом ответа 404 (если отключено, то будет возвращать NULL).
 		$timeout - таймаут запроса
+		$referer - реферер для перехода
 	Возвращает массив вида:
 		['исходный код страницы', 'содержимое HTTP-заголовка Content-Type', 'текст ошибки']
 */
-function cu_download($url, $allow_404 = true, $timeout = 20)
+function cu_download($url, $allow_404 = true, $timeout = 20, $referer = NULL)
 {
 	$url = preg_replace('/#.*/', '', $url);
 	if (!function_exists('curl_init'))
@@ -1842,7 +1928,7 @@ function cu_download($url, $allow_404 = true, $timeout = 20)
 	{
 		@curl_setopt_array($ch, [
 			CURLOPT_URL => $url,
-			CURLOPT_REFERER => $url,
+			CURLOPT_REFERER => (($referer!==NULL)?$referer:$url),
 			CURLOPT_RETURNTRANSFER => true,
 			CURLOPT_SSL_VERIFYPEER => false,
 			CURLOPT_SSL_VERIFYHOST => false,
@@ -1871,3 +1957,4 @@ function cu_download($url, $allow_404 = true, $timeout = 20)
 	}
 	return [$res, $ct, $error];
 }
+
