@@ -3,14 +3,19 @@
 HTML DOM parser / editor / beautifier / autocloser
 
 Простой и быстрый HTML DOM парсер/редактор.
-
 Совместим с PHP 7.3
+	
+Содержит класс DOM-узла (html), а также удобные функции:
+	
+		url_abs() - абсолютизация URL
+		url_replace() - замена вашим колбеком голых доменов и URL в тексте, находящихся вне href-атрибутов
+		cu_download() - скачивание страниц с приемом заголовка Content-Type
 	
 	Пример использования:
 	
 		$p = new html();
 		$p->inner(file_get_contents('/tmp/somefile.html'));
-		$p->iterate(function($node, &$ctrl){
+		$p->iterate(function($node, &$c){
 			if ($node->tag=='a')
 			{echo $node->inner().'<br>';}
 		});
@@ -36,4 +41,5 @@ HTML DOM parser / editor / beautifier / autocloser
 			- prepend()
 			- replace()
 			- replace_inner()
-
+		- поддерживается и корректно обрабатывается операция clone
+		- поддерживает красивый var_dump() для узлов (без гигантских листингов, удобно)
