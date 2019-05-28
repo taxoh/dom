@@ -53,7 +53,7 @@ define('HTML_ELEMENTS_SPAN', ['a', 'abbr', 'acronym', 'applet', 'audio', 'b', 'b
 // информационные и логические элементы, которые однозначно нельзя отнести к строчным, либо блочным (часто невидимые).
 define('HTML_ELEMENTS_INFO', ['area', 'base', 'basefont', 'bgsound', 'body', 'caption', 'col', 'colgroup', 'datalist', 'frame', 'frameset', 'head', 'html', 'keygen', 'legend', 'link', 'map', 'menu', 'menuitem', 'meta', 'noembed', 'noframes', 'noscript', 'optgroup', 'option', 'param', 'script', 'source', 'style', 'title', 'track', 'wbr']);
 // "выделители" (phrase tags): жирный, курсив и прочие косметические выделялки для текста
-define('HTML_ELEMENTS_MARKS', ['abbr', 'acronym', 'b', 'big', 'cite', 'code', 'del', 'dfn', 'em', 'font', 'i', 'ins', 'kbd', 'mark', 's', 'samp', 'small', 'span', 'strike', 'strong', 'sub', 'sup', 'tt', 'u', 'q', 'var', ]);
+define('HTML_ELEMENTS_MARKS', ['abbr', 'acronym', 'address', 'b', 'big', 'cite', 'code', 'del', 'dfn', 'em', 'font', 'i', 'ins', 'kbd', 'mark', 's', 'samp', 'small', 'span', 'strike', 'strong', 'sub', 'sup', 'tt', 'u', 'q', 'var', ]);
 // элементы, используемые внутри (полезного) контента. Без тега "span".
 define('HTML_CONTENT_TAGS', ['a', 'abbr', 'acronym', 'audio', 'b', 'blockquote', 'br', 'cite', 'code', 'dd', 'del', 'dfn', 'dl', 'dt', 'em', 'embed', 'font', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'i', 'iframe', 'img', 'ins', 'kbd', 'li', 'mark', 'object', 'ol', 'p', 'param', 'picture', 'pre', 'q', 'rp', 'rt', 'ruby', 's', 'samp', 'small', 'source', 'strike', 'strong', 'sub', 'sup', 'table', 'tbody', 'td', 'tfoot', 'th', 'thead', 'time', 'tr', 'track', 'tt', 'u', 'ul', 'var', 'video', ]);
 // элементы, которые всегда подразумевают перенос строки (т.е. не могут собой разделять слова одного предложения)
@@ -808,9 +808,9 @@ class html {
 		Самый обычный и последовательный обход. Идем словно курсором, спускаясь на уровень вниз, когда это возможно.
 		Внимание! Замечания по поводу работы с узлами *во время* обработки, т.е. изнутри колбека:
 			Терминология: 
-				- "текущий обрабатываемый узел" (или "текущий узел") - это то, что передается в колбек в виде переменной $node.
-				- "состав" - это состав или порядок узлов
 				- "базовый узел" - это тот узел, от которого была вызвана функция.
+				- "текущий обрабатываемый узел" (или "текущий узел") - это то, что передается в колбек в виде переменной $node.
+				- "состав" - это состав узлов либо порядок их следования
 			Менять параметры любых узлов (исключая свойство children) всегда можно без предосторожностей, это безопасно. 
 			Как работает функция: перед обработкой детей очередного узла все его дети копируются в отдельный массив (итератор), по которому идёт обход. 
 			Поэтому! 
@@ -834,7 +834,7 @@ class html {
 					$node - очередной узел
 					$ctrl - массив контроля за обработкой. Ключи:
 					
-						'level' - (int) (только для чтения) уровень текущей вложенности. Целое число >= 0.
+						'level' - (int) (только для чтения) уровень текущей вложенности. Целое число >= 0. Номер уровня считается начиная от базового узла.
 						'skip' - (bool) если поставить в true, то обход потомков текущего обрабатываемого узла ($node) произведен не будет.
 						'rewind_level' - (int) (cтрогая проверка на int!) уровень вложенности, до которого будет осуществлена перемотка (сброс) процесса обработки.
 							Если занести сюда значение, равное значению $ctrl['level'], то обработка начнется с первого ребенка родителя текущего обрабатываемого узла (т.е., попросту говоря, с первого "брата").
@@ -851,6 +851,15 @@ class html {
 							Если передать 0, то обработка полностью прекратится.
 							Значения больше $ctrl['level'], либо ниже 0 передавать бессмысленно.
 							Если занести NULL - выскакивания не будет (так по-умолчанию).
+						'stack' - (массив) (только для чтения) стек родителей ("стек обработки"). По сути это список родителей текущего обрабатываемого узла, начиная от самого дальнего (!) родителя (т.е. от базового узла) и заканчивая самым ближним родителем. Каждый элемент массива имеет вид: 
+						
+							['iter'=>массив_узлов, 'node'=>узел, ]
+							
+							, где:
+								'node' - очередной родитель
+								'iter' - не трогаем, это итератор
+								
+							Для различных проверок стека удобны функции с префиксом stack_*, такие как html::stack_have().
 			
 			Если колбек вернет TRUE, то обход будет немедленно полностью прекращен. При этом возвращенное колбеком значение будет передано как результат вызова функции.
 		
@@ -877,6 +886,19 @@ class html {
 	public function iterate_reverse($callback)
 	{$this->iterate_recurs($this, true, $callback);}
 	
+	/*	Функция предназначена для вызова изнутри колбека iterate().
+		Позволяет проверить, нет ли среди родителей текущего узла тегов заданного типа.
+			$tags - массив имен тегов, например: ['strong', 'span', ]
+			$c - массив контроля за обработкой
+		Вернет узел (либо NULL, если не найдено).
+		Возвращает наиболее дальнего родителя среди найденных.
+	*/
+	static public function stack_have($tags, $c)
+	{
+		foreach ($c['stack'] as $v)
+		{if (in_array($v['node']->tag, $tags)) return $v['node'];}
+	}
+	
 	/*	Получить список родителей текущего узла, начиная от самого близкого и вверх, исключая корневой.
 			$self - добавить также в возвращаемый массив ссылку на себя.
 	*/
@@ -900,9 +922,8 @@ class html {
 		static $attrs_cache = [];
 		if ($values===NULL)
 		{
+			if ($this->tag{0}=='#') return [];
 			$res = [];
-			if ($this->tag{0}=='#')
-			{return $res;}
 			if (($v = ($attrs_cache[$this->tag_block]))!==NULL)
 			{return $v;}
 			if (preg_match_all('#([\w\-]+)(?:\s*=\s*("[^"<>]*"|\'[^\'<>]*\'|[^\s<>=]*))?#si', preg_replace('#^<[^\s<>]+#', '', $this->tag_block), $m, PREG_SET_ORDER))
@@ -934,9 +955,9 @@ class html {
 		{
 			if ($this->tag{0}=='#' || !preg_match('#^(<[^\s<>]+\s*).*?([\s/]*>)$#s', $this->tag_block, $m))
 			{return;}
-			$z = [];
-			foreach ($values as $k=>$v) $z[] = $k.'="'.htmlspecialchars($v).'"';
-			$this->tag_block = ($z?$m[1]:rtrim($m[1])).(($z && !preg_match('#\s$#', $m[1]))?' ':'').implode(' ', $z).$m[2];
+			foreach ($values as $k=>&$v) $v = $k.'="'.htmlspecialchars($v).'"';
+			unset($v);
+			$this->tag_block = ($values?$m[1]:rtrim($m[1])).(($values && !preg_match('#\s$#', $m[1]))?' ':'').implode(' ', $values).$m[2];
 			$this->invalidate();
 		}
 	}
@@ -958,6 +979,22 @@ class html {
 	public function pull_up()
 	{$this->replace($this->children);}
 	
+	/*	Обернуть текущий тег в отдельный тег.
+		Текущий тег сменит родителя.
+			$tag_name - имя тега, например 'span'
+		Внимание! Иизнутри iterate() всегда используйте установку rewind_level при вызове данной функции.
+	*/
+	public function encapsulate($tag_name)
+	{
+		$x = new html();
+		$x->tag = $tag_name;
+		$x->tag_block = '<'.$tag_name.'>';
+		$x->closer = '</'.$tag_name.'>';
+		$this->replace($x);
+		$x->children = [$this, ];
+		$this->parent = $x;
+	}
+	
 	/*	Удалить текущий узел.
 		В случае корневого узла это очистит его содержимое.
 		
@@ -968,7 +1005,7 @@ class html {
 	{
 		if ($this->parent)
 		{
-			if (($num = array_search($this, $this->parent->children, true))===FALSE)
+			if (($num = array_search($this, $this->parent->children, true))===false)
 			{return;}
 			unset($this->parent->children[$num]);
 		}
@@ -998,10 +1035,7 @@ class html {
 	}
 	
 	/*	Добавить узел или список узлов в содержимое *текущего* тега (в конец).
-		Параметры:
-	
 			$nodes - может быть узлом или массивом узлов. (!) Корневой узел нельзя передавать среди $nodes.
-		
 		Выполняются следующие операции:
 			- меняет родителя всем узлам в $nodes
 			- добавляет узлы из $nodes к детям текущего узла
@@ -1015,6 +1049,136 @@ class html {
 			$cc->parent = $this;
 		}
 		$this->invalidate();
+	}
+	
+	/*	Поместить заданный узел перед текущим элементом, либо после него.
+		Для корневых тегов вызов этой функции поместит узел в начало, либо в конец документа.
+			$node - узел
+			$before - (bool) добавить перед текущим узлом (true) или после него (false)
+	*/
+	public function insert($node, $before)
+	{
+		if ($p = $this->parent)
+		{
+			$ch = [];
+			if ($before)
+			{
+				foreach ($p->children as $v)
+				{
+					if ($v===$this) $ch[] = $node;
+					$ch[] = $v;
+				}
+			}
+				else
+			{
+				foreach ($p->children as $v)
+				{
+					$ch[] = $v;
+					if ($v===$this) $ch[] = $node;
+				}
+			}
+			$p->children = $ch;
+		}
+			else
+		{
+			$p = $this;
+			if ($before)
+			{array_unshift($p->children, $node);}
+				else
+			{$p->children[] = $node;}
+		}
+		$node->parent = $p;
+		$p->invalidate();
+	}
+	
+	/*	Создать *текстовый* узел с заданным содержимым перед текущим элементом, либо после него.
+		Для корневых тегов вызов этой функции добавит текстовый узел в начало, либо в конец документа.
+			$text - текстовое содержимое для нового узла
+			$before - (bool) добавить перед тегом (true) или после него (false)
+		При желании в качестве $text можно передать любую HTML-разметку, но она останется текстовым узлом (!).
+		Чтобы она стала активной документ нужно пересобрать заново:
+			$x->insert_before('<p>some <strong>letters</strong></p>');
+			$r = $x->root();
+			$r->outer(html::render($r));
+	*/
+	public function insert_text($text, $before = true)
+	{
+		$func = function($text, $p){
+			$x = new html();
+			$x->tag = '#text';
+			$x->tag_block = $text;
+			$x->parent = $p;
+			return $x;
+		};
+		if ($p = $this->parent)
+		{
+			$ch = [];
+			if ($before)
+			{
+				foreach ($p->children as $v)
+				{
+					if ($v===$this) $ch[] = $func($text, $p);
+					$ch[] = $v;
+				}
+			}
+				else
+			{
+				foreach ($p->children as $v)
+				{
+					$ch[] = $v;
+					if ($v===$this) $ch[] = $func($text, $p);
+				}
+			}
+			$p->children = $ch;
+		}
+			else
+		{
+			$x = $func($text, $this);
+			if ($before)
+			{array_unshift($this->children, $x);}
+				else
+			{$this->children[] = $x;}
+		}
+	}
+	
+	/*	"Всплыть" узел. Текущий узел закроет все теги, внутри которых расположен и откроет их заново (через создание новых узлов), встав между двумя возникшими частями.
+		Т.е. текущий узел будет среди детей корневого узла.
+		Если узел уже находится среди детей корневого узла (либо является корневым), то никаких операций выполнено не будет.
+		Если в результате деления на границах возникнут пустые теги, то они будут удалены.
+	*/
+	public function pop()
+	{
+		$this->invalidate();
+		$prev = $this;
+		$rem = $buf = [];
+		foreach ($this->parents() as $v)
+		{
+			$k = array_search($prev, $v->children, true);
+			$buf[] = [$v, array_slice($v->children, $k+1), ];
+			$v->children = array_slice($v->children, 0, (($prev===$this)?$k:$k+1));
+			if (!$v->children) $rem[] = $v;
+			$prev = $v;
+		}
+		if ($buf)
+		{
+			list($base) = end($buf);
+			$base->insert($this, false);
+			$prev = NULL;
+			foreach ($buf as $v)
+			{
+				list($n, $ch) = $v;
+				$new = new html();
+				$new->tag = $n->tag;
+				$new->tag_block = $n->tag_block;
+				$new->closer = $n->closer;
+				if ($prev && $prev->children) $new->append($prev);
+				$new->append($ch);
+				$prev = $new;
+			}
+			if ($new->children)
+			{$this->insert($new, false);}
+		}
+		foreach ($rem as $v) $v->remove();
 	}
 	
 	/*	Очистить содержимое тега. Сам тег остается на месте.
@@ -1131,6 +1295,7 @@ class html {
 	*/
 	static public function render($nodes)
 	{
+		if (!is_array($nodes)) $nodes = [$nodes, ];
 		$res = '';
 		foreach ($nodes as $elem)
 		{html::get_content($elem, $res);}
@@ -1192,7 +1357,7 @@ class html {
 	}
 	
 	/*	Изменить тип тега.
-		Внимание: тип не может быть изменен на '#text' или '#comment', а также на "не-имеющий-закрывающего" тега тип. Также тип нельзя менять корневому узлу.
+		Внимание: тип НЕ может быть изменен на '#text' или '#comment', а также на "не-имеющий-закрывающего" тега тип. Также тип нельзя менять корневому узлу.
 			$save_attrs - сохранить ли атрибуты от прежнего тега
 	*/
 	public function change($tag, $save_attrs = false)
@@ -1207,9 +1372,8 @@ class html {
 	public function root()
 	{
 		$c = $this;
-		do {
-			$c = $c->parent;
-		} while ($c->tag!==NULL);
+		do {$c = $c->parent;}
+		while ($c->tag!==NULL);
 		return $c;
 	}
 		
@@ -1489,6 +1653,11 @@ class html {
 	protected static function get_content($tag, &$res)
 	{
 		$res .= $tag->tag_block;
+		
+		
+		if (!is_array($tag->children))
+		debug_print_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS);
+		
 		foreach ($tag->children as $tag2)
 		{html::get_content($tag2, $res);}
 		$res .= $tag->closer;
@@ -1584,9 +1753,10 @@ class html {
 				{$special_opened = $name;}
 					else
 				{
-					// делается проверка родителей для текущего тега. Обнаруженный "неправильный" родитель будет закрыт.
-					// ищется максимально топовый "неправильный" родитель.
-					// $stoppers - список тегов, *до* которых родители (при пути наверх) будут проверяться: если встречен - проверка прерывается.
+					/*	Делается проверка родителей для текущего тега ($name). 
+							$blocked_parents - если среди родителей текущего тега ($name) будет найден один из этих тегов ("неправильный" родитель), то он будет закрыт. Ищется максимально топовый.
+							$stoppers - список тегов, *до* которых родители (при пути наверх) будут проверяться: если встречен - проверка прерывается.
+					*/
 					$stoppers = $blocked_parents = [];
 					switch ($name)
 					{
@@ -1597,6 +1767,16 @@ class html {
 						case 'html':
 							// если среди родителей у элементов этого типа попадается элемент такого же типа, то этот родитель закрывается
 							$blocked_parents = [$name, ];
+						break;
+						case 'h1':
+						case 'h2':
+						case 'h3':
+						case 'h4':
+						case 'h5':
+						case 'h6':
+						case 'form':
+						case 'table':
+							$blocked_parents = ['p', ];
 						break;
 						case 'li':
 						case 'dd':
@@ -1636,7 +1816,14 @@ class html {
 					
 					// единственные теги, которые можно внутри h1-h6:
 					if (!in_array($name, ['tt', 'i', 'b', 'big', 'small', 'em', 'strong', 'dfn', 'code', 'samp', 'kbd', 'var', 'cite', 'abbr', 'acronym', 'a', 'img', 'object', 'br', 'script', 'map', 'q', 'sub', 'sup', 'span', 'bdo', 'input', 'select', 'textarea', 'label', 'button', ]))
-					{$blocked_parents = array_merge($blocked_parents, ['h1', 'h2', 'h3', 'h4', 'h5', 'h6', ]);}
+					{
+						$blocked_parents[] = 'h1';
+						$blocked_parents[] = 'h2';
+						$blocked_parents[] = 'h3';
+						$blocked_parents[] = 'h4';
+						$blocked_parents[] = 'h5';
+						$blocked_parents[] = 'h6';
+					}
 					
 					if ($blocked_parents)
 					{
@@ -1745,16 +1932,15 @@ class html {
 			$cur = &$stack[$level];
 			if (!is_array($cur['iter']))
 			{
-				$z = $cur['node']->children;
+				$cur['iter'] = $cur['node']->children;
 				if ($reverse)
-				{$z = array_reverse($z);}
+				{$cur['iter'] = array_reverse($cur['iter']);}
 					else
-				{reset($z);}
-				$cur['iter'] = $z;
+				{reset($cur['iter']);}
 			}
 			if ($node = current($cur['iter']))
 			{
-				$c = ['level' => $level, ];
+				$c = ['level'=>$level, 'stack'=>&$stack, ];
 				if ($res = ($callback)($node, $c))
 				{return $res;}
 				if (is_int($cl = $c['continue_level']))
@@ -1764,13 +1950,13 @@ class html {
 				}
 				if (is_int($rl = $c['rewind_level']))
 				{
-					unset($cur['iter']);
 					if ($rl < $level)
 					{
 						unset($cur);
 						$rl = max(0, $rl);
 						$stack = array_slice($stack, 0, $rl+1);
 					}
+					$stack[count($stack)-1]['iter'] = NULL;
 					continue;
 				}
 				if (!$c['skip'])
@@ -1900,10 +2086,11 @@ function url_replace($s, $func = NULL)
 		$allow_404 - возвращать содержимое даже для страниц с кодом ответа 404 (если отключено, то будет возвращать NULL).
 		$timeout - таймаут запроса
 		$referer - реферер для перехода
+		$headers - массив доп. HTTP заголовков
 	Возвращает массив вида:
 		['исходный код страницы', 'содержимое HTTP-заголовка Content-Type', 'текст ошибки']
 */
-function cu_download($url, $allow_404 = true, $timeout = 20, $referer = NULL)
+function cu_download($url, $allow_404 = true, $timeout = 20, $referer = NULL, $headers = [])
 {
 	$url = preg_replace('/#.*/', '', $url);
 	if (!function_exists('curl_init'))
@@ -1936,10 +2123,10 @@ function cu_download($url, $allow_404 = true, $timeout = 20, $referer = NULL)
 			CURLOPT_TIMEOUT => $timeout,
 			CURLOPT_USERAGENT => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:64.0) Gecko/20100101 Firefox/64.0',
 			CURLOPT_HEADER => 1,
-			CURLOPT_HTTPHEADER => [
+			CURLOPT_HTTPHEADER => array_merge([
 				'Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8', 
 				'Accept-Language: en-us,en;q=0.5',
-			],
+			], $headers),
 			CURLOPT_ENCODING => 'gzip, deflate',
 			CURLOPT_FOLLOWLOCATION => true,
 		]);
