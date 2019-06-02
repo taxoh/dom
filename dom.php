@@ -58,7 +58,7 @@ define('HTML_ELEMENTS_MARKS', ['abbr', 'acronym', 'address', 'b', 'big', 'cite',
 define('HTML_CONTENT_TAGS', ['a', 'abbr', 'acronym', 'audio', 'b', 'blockquote', 'br', 'cite', 'code', 'dd', 'del', 'dfn', 'dl', 'dt', 'em', 'embed', 'font', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'i', 'iframe', 'img', 'ins', 'kbd', 'li', 'mark', 'object', 'ol', 'p', 'param', 'picture', 'pre', 'q', 'rp', 'rt', 'ruby', 's', 'samp', 'small', 'source', 'strike', 'strong', 'sub', 'sup', 'table', 'tbody', 'td', 'tfoot', 'th', 'thead', 'time', 'tr', 'track', 'tt', 'u', 'ul', 'var', 'video', ]);
 // элементы, которые всегда подразумевают перенос строки (т.е. не могут собой разделять слова одного предложения)
 define('HTML_LINEBREAK_TAGS', ['audio', 'blockquote', 'br', 'cite', 'code', 'dd', 'dl', 'dt', 'embed', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'iframe', 'img', 'li', 'object', 'ol', 'p', 'picture', 'pre', 'ruby', 'table', 'td', 'th', 'ul', 'video', ]);
-// элементы, разрешенные спецификацией внутри <p> 
+// элементы, разрешенные спецификацией внутри параграфа (<p>)
 define('HTML_ELEMENTS_PHRASING', ['a', 'abbr', 'area', 'audio', 'b', 'bdi', 'bdo', 'br', 'button', 'canvas', 'cite', 'code', 'command', 'datalist', 'del', 'dfn', 'em', 'embed', 'i', 'iframe', 'img', 'input', 'ins', 'kbd', 'keygen', 'label', 'map', 'mark', 'math', 'meter', 'noscript', 'object', 'output', 'progress', 'q', 'ruby', 's', 'samp', 'script', 'select', 'small', 'span', 'strong', 'sub', 'sup', 'svg', 'textarea', 'time', 'u', 'var', 'video', 'wbr', ]);
 // микроразметка: элементы, дающие конкретную классифицирующую информацию об определенных частях документа
 define('HTML_ELEMENTS_MICRO', ['abbr', 'acronym', 'address', 'article', 'aside', 'button', 'cite', 'code', 'dd', 'dfn', 'dt', 'footer', 'header', 'main', 'meta', 'nav', 'time', 'q', ]);
@@ -76,6 +76,12 @@ define('HTML_ELEMENTS_OBSOLETE', ['acronym', 'applet', 'basefont', 'bgsound', 'b
 define('HTML_ELEMENTS_HTML5', ['article', 'aside', 'bdi', 'details', 'dialog', 'figcaption', 'figure', 'footer', 'header', 'main', 'mark', 'menuitem', 'meter', 'nav', 'progress', 'rp', 'rt', 'ruby', 'section', 'summary', 'time', 'wbr', 'datalist', 'keygen', 'output', ]);
 // используются здешним парсером: теги, не имеющие закрывающих. В режиме XML этот список не учитывается.
 define('HTML_ELEMENTS_VOID', ['!doctype', '?xml', 'area', 'base', 'basefont', 'bgsound', 'br', 'col', 'command', 'embed', 'frame', 'hr', 'img', 'input', 'isindex', 'keygen', 'link', 'meta', 'nextid', 'param', 'source', 'track', 'wbr', ]);
+// элементы, которые категорически нельзя располагать внутри элементов такого же типа. Т.е. предыдущий элемент такого же типа должен быть прерван. Проверено на последней версии blink + HTML5.
+define('HTML_ELEMENTS_NON_NESTED', ['a', 'body', 'button', 'dd', 'dt', 'form', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'head', 'html', 'iframe', 'select', 'li', 'nobr', 'noembed', 'noframes', 'noscript', 'optgroup', 'option', 'p', 'script', 'style', 'textarea', 'title', 'xmp', ]);
+// элементы, которые категорически нельзя располагать внутри параграфа. Т.е. параграф должен будет прерваться. Проверено на последней версии blink + HTML5.
+define('HTML_ELEMENTS_NON_PARAGRAPH', ['address', 'article', 'aside', 'blockquote', 'center', 'dd', 'details', 'dialog', 'dir', 'div', 'dl', 'dt', 'fieldset', 'figcaption', 'figure', 'footer', 'form', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'header', 'hgroup', 'hr', 'li', 'main', 'menu', 'nav', 'ol', 'p', 'plaintext', 'pre', 'section', 'summary', 'table', 'ul', 'xmp', ]);
+// элементы, которые категорически нельзя располагать внутри заголовков (h1-h6). Т.е. заголовок должен будет прерваться. Проверено на последней версии blink + HTML5.
+define('HTML_ELEMENTS_NON_HEADER', ['body', 'caption', 'col', 'colgroup', 'frame', 'frameset', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'head', 'html', 'tbody', 'td', 'tfoot', 'th', 'thead', 'tr', ]);
 // используются здешним парсером: теги, которые будучи открытыми не воспринимают других тегов, в том числе комментарии. В режиме XML этот список не учитывается.
 define('HTML_ELEMENTS_SPECIAL', ['script', 'style']);
 
@@ -116,6 +122,12 @@ class html {
 			:notcontains("любой текст") - регистронезависимая проверка отсутствия текста внутри тега (проверяется outerHTML)
 			:icontains("любой текст") - регистронезависимая проверка наличия текста внутри тега (проверяется innerHMTL)
 			:inotcontains("любой текст") - регистронезависимая проверка отсутствия текста внутри тега (проверяется innerHMTL)
+			:rcontains("#регулярка#") - проверка на совпадение с регуляркой (проверяется outerHTML)
+			:rnotcontains("#регулярка#") - проверка на НЕсовпадение с регуляркой (проверяется outerHTML)
+			:ricontains("#регулярка#") - проверка на совпадение с регуляркой (проверяется innerHMTL)
+			:rinotcontains("#регулярка#") - проверка на НЕсовпадение с регуляркой (проверяется innerHMTL)
+			:rtbcontains("#регулярка#") - проверка на совпадение с регуляркой (проверяется только открывашка от тега, исключая содержимое тега)
+			:rtbnotcontains("#регулярка#") - проверка на НЕсовпадение с регуляркой (проверяется только открывашка от тега, исключая содержимое тега)
 			:header - собрать все заголовки (h1, h2, h3, ...)
 			:hidden - собирает элементы, имеющие в атрибуте "style" текст "display:none" либо "visibility:hidden" (ищет по регулярке, регистронезависимо)
 			:first - взять первый элемент среди найденных
@@ -170,7 +182,7 @@ class html {
 		// + опц. псевдоклассы во всех случаях, + опц. атрибут во всех случаях
 		$nth = '\(\s*(?:[\d\-\+n]+|odd|even)\s*\)';
 		if ($allow_extensions)
-		{$ext = '|odd|even|hidden|header|first|last|(?:eq|lt|gt)\(\s*\-?\d+\s*\)|i?(?:not)?contains\((?:"[^"]+"|\'[^\']+\'|[^\)]+)\)';}
+		{$ext = '|odd|even|hidden|header|first|last|(?:eq|lt|gt)\(\s*\-?\d+\s*\)|(?:contains|notcontains|icontains|inotcontains|rcontains|rnotcontains|ricontains|rinotcontains|rtbcontains|rtbnotcontains)\((?:"[^"]+"|\'[^\']+\'|[^\)]+)\)';}
 		$gr = '(?P<tag>(?:@?[\w\-]*|\*)(?:[#\.@][\w\-]+)*)'.
 			'(?P<attrs>(?:\[.*?\])*)'.
 			'(?P<pseudo>(?:\s*(?::(?:active|checked|disabled|empty|enabled|first-child|first-of-type|last-of-type|focus|hover|in-range|invalid|last-child|link|not(?:-parent)?\([\w\-#\.,\s]+\)|only-child|target|valid|visited|root|read-write|lang\([\w\-]+\)|read-only|optional|out-of-range|only-of-type'.$ext.'|nth-of-type'.$nth.'|nth-last-of-type'.$nth.'|nth-last-child'.$nth.'|nth-child'.$nth.')|::(?:after|before|first-letter|first-line|selection)))*)';
@@ -357,6 +369,7 @@ class html {
 										$ps = trim(rtrim($ps, ')'));
 										$ps = preg_replace('#^(["\'])(.*)\1$#s', '\2', $ps);
 									}
+									// напоминаю, что $conti2 - это условие выхода из цикла, т.е. это инверсия "найденности"
 									$conti2 = false;
 									switch ($p)
 									{
@@ -412,6 +425,24 @@ class html {
 										break;
 										case 'inotcontains':
 											$conti2 = (mb_stripos($e->inner(), $ps)!==FALSE);
+										break;
+										case 'rcontains':
+											$conti2 = !preg_match($ps, $e->outer());
+										break;
+										case 'rnotcontains':
+											$conti2 = (bool)preg_match($ps, $e->outer());
+										break;
+										case 'ricontains':
+											$conti2 = !preg_match($ps, $e->inner());
+										break;
+										case 'rinotcontains':
+											$conti2 = (bool)preg_match($ps, $e->inner());
+										break;
+										case 'rtbcontains':
+											$conti2 = !preg_match($ps, $e->tag_block);
+										break;
+										case 'rtbnotcontains':
+											$conti2 = (bool)preg_match($ps, $e->tag_block);
 										break;
 										case 'first': $need['first'] = true; break;
 										case 'last': $need['last'] = true; break;
@@ -1441,10 +1472,10 @@ class html {
 		$arr4 = array_diff_key($arr[1], $arr[0]);
 		$arr5 = array_merge(array_values($arr3), array_values($arr4));
 		$z = [[], [], ];
-		foreach ($arr5 as $v)
+		foreach ($arr5 as $v2)
 		{
-			list($n, $v) = $v;
-			$z[$n][] = $v;
+			list($k, $v) = $v2;
+			$z[$k][] = $v;
 		}
 		list($arr1, $arr2) = $z;
 		if (count($arr1)!=count($arr2))
@@ -1455,8 +1486,8 @@ class html {
 			{
 				$x = reset($arr1);
 				$res[] = $x->parent;
-				return;
 			}
+			return;
 		}
 		// здесь $arr1 и $arr2 имеют одинаковый размер
 		reset($arr2);
@@ -1589,6 +1620,1009 @@ class html {
 		$x3 = (!$x1 || !$x2);
 		$this->forks_recurse($reg1, $reg2, $result, $strict_order, ($strip?'strip':'outer'), $x1, $x2, $x3);
 		return $result;
+	}
+	
+	/*	Разбить текущий HTML-документ на контекстные группы.
+		(!) Внимание! Текущий узел должен быть корневым (т.е. хранить документ целиком).
+		Документ должен быть заранее приведен к UTF-8.
+		При $preserve_tags==false некоторые узлы будут удалены из документа.
+		Схема называется article_extractor.
+
+		Общая идея:
+	
+			- ищем узел, содержащий "столбик параграфов": это такой узел DOM, где больше всего "предложных параграфов"
+			- в роли "параграфа" может выступать любой элемент, не только <p>
+			- "предложный параграф" - это значит параграф, который содержит в своем прямом контенте (без "стриптеггинга") хотя бы одно "предложение" текста
+			- "предложением" при этом считается строчка с большой буквы и как минимум с 4 словами после этого, идущими через пробел
+			- тяпаем всё из этого узла и обрабатываем
+		
+		Результаты:
+	
+			- очень чистые статьи в удобно отформатированном виде
+			- может парсить статьи и отдельно комменты, или и то и другое
+			- может рипать шаблон (заменять статейный контейнер произвольным контентом)
+		
+		Параметры:
+		
+			$preserve_tags - (bool) предохранить ли абсолютно все теги изначального документа. 
+				Когда включено, то html::article_filter() использовать нельзя! Но можно заменять части документа на какие-то свои и получим авто-рипалку шаблонов.
+				Когда отключено, то удаляются скрипты, стили, итд. Тогда можно вызывать в дальнейшем html::article_filter().
+			$allow_noscript - (bool) оставлять ли тег noscript. 
+				Если равно true, то некоторые (редкие) сайты станет парсить лучше (такие как Blogger). Но некоторые сайты станет парсить хуже. Может возникать чуть больше мусора, например разновидности надписей "включите javascript".
+		Вернет массив вида:
+			[$ghash_stats, $grps]		
+		, где:
+			$ghash_stats - массив статистики. Имеет вид:
+				'zzz' => ['cnt'=>xxx, 'sum'=>yyy, ]
+			, где:
+				zzz - хеш группы (ghash)
+				xxx - количество блоков в группе
+				yyy - сумма параграфных баллов
+			$grps - список массивов dom узлов.
+				Каждый из таких массивов это т.н. список "параграфов". Т.е. если взять его родителя, то получим "контейнер параграфов".
+				Первый массив как правило является статьей, второй - комментариями пользователей, третий и последующие - бесполезным мусором.
+				В очень редких случаях (~1%) возможна перемена мест между первыми двумя группами.
+				Если взять первый узел (т.е. $grps[0][0]), в нем содержится поле $par_digest. Это строка, в ней через запятую перечислены теги, которые были в роли параграфов. Эту строку можно разбить по запятым и передать в html::article_filter() в качестве 'par_tags'.
+		При неудаче вернет NULL, либо $grps будет пуст.
+		Каждую полученную группу ($grps[0], $grps[1], ...) можно (нужно!) дополнительно обработать (см. html::article_filter()), т.к. они сырые и представляют из себя почти нетронутые участки оригинального документа, содержащие соответствующий контент.
+	*/
+	public function context_groups($preserve_tags = false, $allow_noscript = false)
+	{
+		$bad_tags = ['#comment', 'script', 'head', 'style', 'noindex', 'noframes', 'noembed', ];
+		if (!$allow_noscript)
+		{
+			// иногда контент содержится именно здесь! да-да, Blogger так делает.
+			$bad_tags[] = 'noscript';
+		}
+		
+		// собрать информацию о "параграфах" для обнаружения "контейнеров параграфов"
+		$this->iterate(function($node, &$ctrl)use($preserve_tags, $bad_tags){
+			
+			// удалить или пометить чувствительные теги
+			if (in_array($node->tag, $bad_tags))
+			{
+				if (!$preserve_tags)
+				{$node->remove();}
+				$ctrl['skip'] = true;
+				return;
+			}
+			
+			// контейнер параграфов
+			$parent = $node->parent;
+			
+			// $node - претендент на "параграф"
+			
+			// здесь очень тонко!
+			
+			// перечислены теги, которые могут быть общим контейнером ("контейнером параграфов")
+			if (!in_array($parent->tag, [
+				// иногда контент содержится именно здесь! да-да, Blogger так делает.
+				// это позволяет его парсить, но добавляет мусора, в особенности массу разновидестей надписей "включите javascript"
+				'noscript',
+				'body', 'div', 'td', 'main', 'section', 'article', 'aside', 'header', 'details', 'summary',
+			]))
+			{return;}
+			
+			// перечислены теги, которые могут выступать в роли "параграфов"
+			// вот эти еще с натяжкой можно заюзать, но это бред: 'main', 'nav', 'blockquote', 'center', 'meta', 'pre'
+			if (!in_array($node->tag, ['p', 'div', 'span', 'section', 'details', 'summary', 'ruby', ]))
+			{return;}
+			
+			$pt = $node->inner();
+			
+			// регулярка для поиска внутри "параграфа" тегов, которых в нем быть не может в принципе.
+			// эта штука на ~20% ускоряет обработку, но в некотором очень малом проценте случаев ( < 3%) снижает качество.
+			// 'div', // div должен быть закомменчен! строго!
+			$reg4 = '#<(applet|area|article|aside|base|basefont|bgsound|blink|body|button|canvas|caption|col|colgroup|datalist|details|dialog|fieldset|footer|form|frame|frameset|head|header|html|input|isindex|label|legend|link|main|map|marquee|menu|menuitem|meter|nav|optgroup|option|param|plaintext|progress|section|select|summary|svg|table|tbody|td|textarea|tfoot|th|thead|time|title|tr)\b#i';
+			if (preg_match($reg4, $pt))
+			{return;}
+			
+			// перед оценкой "параграфности" удаляются некоторые теги
+			$regs2 = [
+				// перечислены все phrase-теги (т.е. различные выделители: strong, em, span, итд),
+				// а также те, которые часто используются в роли них (напр.: center, big, data, meta, итд).
+				// Они создают липовую вложенность в условиях параграфа.
+				// удаляя их мы выравниваем "поверность" параграфа перед анализом, делая её более плоской.
+				'#</?(abbr|acronym|address|b|bdi|bdo|big|center|cite|code|data|del|dfn|em|font|i|ins|kbd|mark|meta|q|s|samp|small|span|strike|strong|sub|sup|tt|u|var)\b[^>]*>#si',
+				// ссылки удаляются полностью, т.к. лишь вносят шум
+				'#<a\s.*?</a>#si',
+			];
+			$pt = preg_replace($regs2, '', $pt);
+			
+			
+			// разбор нужен чтобы обойти только прямых текстовых детей
+			$ht = new html();
+			$ht->outer($pt);
+
+			// чекер на предложения
+			// вот это хорошо работает:
+			// $predl_reg = '#(?<!\w)(?=\p{Lu})\w+(\s+\w+){3}(?=\s|$)#u';
+			// вот это потестить (вроде тоже норм):
+			$predl_reg = '#(?<!\w)(?=\p{Lu})[\w\-]+(\s+\w[\w\-]*){3}(?=\s|$)#u';
+			// нормально, но с нареканиями:
+			// $predl_reg = '#(?<!\w)\w+(\s+\w+){3}(?=\s|$)#u';
+			// плохая! учитывает только предложения, спотыкается на сайтах о моде, где нет предложений, а только подписи к картинкам
+			// $predl_reg = '#\w\)?[\.\?!]+(?!\w)#u';
+			
+			foreach ($ht->children as $c)
+			{
+				if ($c->tag=='#text' && 
+					trim($c->tag_block) &&
+					($n = preg_match_all($predl_reg, $c->tag_block))
+				)
+				{
+					// тестим доп. слагаемое, помогающее в случаях длинных копипаст без заглавных букв
+					$predl_reg2 = '#(?<!\w)[\w\-]+(\s+\w[\w\-]*){5}(?=\s|$)#u';
+					$n2 = (int)floor(preg_match_all($predl_reg2, $c->tag_block) / 3);
+					
+					$parent->found += $n + $n2;
+					$ok = true;
+				}
+			}
+			
+			if ($ok)
+			{$parent->par_digest[$node->tag]++;}
+		});
+
+		// собрать все найденные "контейнеры параграфов"
+		$arr = [];
+		$this->iterate(function($node, &$ctrl)use(&$arr){
+			if ($node->found)
+			{
+				// сохранить их изначальный порядок
+				$node->orig_order = count($arr);
+				$arr[] = $node;
+			}
+		});
+
+		// отсортировать "контейнеры параграфов" по убыванию "параграфности"
+		usort($arr, function($a, $b){
+			return $b->found <=> $a->found;
+		});
+
+		// отфильтровать "контейнеры параграфов"
+		$blocks = $dupes = [];
+		foreach ($arr as $k=>$node)
+		{
+			// чекнуть на концентрические дубли
+			$pr = $node->parents();
+			for ($j=0;$j<$k;$j++)
+			{
+				if (($in1 = in_array($arr[$j], $pr, true)) || 
+					($in2 = in_array($node, $arr[$j]->parents(), true))
+				)
+				{continue 2;}
+			}
+			
+			$s = $node->outer();
+			
+			// удалить полные дубли блоков
+			if ($dupes[$s]) continue;
+			$dupes[$s] = true;
+			
+			$blocks[$node->orig_order] = $node;
+		}
+
+		// отсортировать в изначальный порядок
+		ksort($blocks);
+
+		$ghash_stats = [];
+		foreach ($blocks as $node)
+		{
+			$node->par_digest = implode(',', array_keys($node->par_digest));
+			$ghash = $node->ghash = substr(md5(implode('|', [$node->par_digest, $node->tag_block, ])), 0, 8);
+			$ghash_stats[$ghash]['cnt']++;
+			$ghash_stats[$ghash]['sum'] += $node->found;
+		}
+		unset($v);
+		
+		// отладка $blocks
+		// $n = 0;
+		// foreach ($blocks as $node)
+		// {
+			// echo '=='.(++$n).'('.
+				// 'found: '.$node->found.', '.
+				// 'par_digest: '.$node->par_digest.', '.
+				// 'ghash: '.$node->ghash.', '.
+				// 'ghash_cnt: '.$ghash_stats[$node->ghash]['cnt'].', '.
+				// 'ghash_sum: '.$ghash_stats[$node->ghash]['sum'].
+			// ')================================================================='."\n".
+			// $node->outer()."\n\n";
+		// }
+		// echo 'ghash_stats: '."\n";
+		// foreach ($ghash_stats as $ghash=>$v)
+		// {echo $ghash.' (cnt: '.$v['cnt'].', sum: '.$v['sum'].')'."\n";}
+
+		
+		/*	Найти группы среди претендентов на группы.
+			Сортируем группы по убыванию ghashsum. Берем шапку от этого списка, где ghashsum больше >=5. 
+			Выбираем из них одну - идущую первой по (изначальному) порядку. 
+			Но желательно брать не конкретно группы, а числа sum и с ними сравнивать found-значения блоков, проходя от начала.
+			Первый же найденный блок таким способом будет статейным ($grps[0]). Второй блок - комментарии ($grps[1]). Третий и последующие ($grps[2]...) - любой сторонний треш, их лучше не использовать (это разного рода тексты из футеров, и это редко бывает частью контента).
+			Возвращает список массивов узлов.
+		*/
+		if (!$ghash_stats) return;
+	
+		// Ищем первый же блок, соответствующий своей суммой found'ов одной из сумм в топовых группах.
+		// И собираем все блоки с таким ghash, как у него.
+		// Первый такой сбор даст статью целиком. Второй - комменты, итд.
+		// $blocks хранит оригинальный порядок узлов и сами узлы.
+		uasort($ghash_stats, function($a, $b){
+			return $b['sum'] <=> $a['sum'];
+		});
+		// если самая топовая группа накоплена <= 3 блоками, то берем в первую очередь её
+		$v = reset($ghash_stats);
+		$ghash = key($ghash_stats);
+		$grps = [];
+		if ($v['cnt'] <= 3)
+		{
+			$new_grp = [];
+			foreach ($blocks as $k=>$node)
+			{
+				if ($node->ghash===$ghash)
+				{
+					$new_grp[] = $node;
+					unset($blocks[$k]);
+				}
+			}
+			if ($new_grp)
+			{$grps[] = $new_grp;}
+		}
+		
+		// теперь следуем по порядку и находим первый же хеш, который состоит в крупных группах и выхватываем всё с этим хешем.
+		// и повторяем этот процесс многократно, пока возникают результаты.
+		do {
+			$new_grp = [];
+			foreach ($blocks as $k=>$node)
+			{
+				if ($ghash_stats[$node->ghash]['sum'] >= 5)
+				{
+					// нашли такой $node, который идет первым по порядку, и при этом удовлетворяет условиям.
+					// теперь собираем все ноды с таким же хешем, как у него, и также удаляем их из массива, хранящего порядок.
+					foreach ($blocks as $kk=>$node2)
+					{
+						if ($node2->ghash===$node->ghash)
+						{
+							$new_grp[] = $node2;
+							unset($blocks[$kk]);
+						}
+					}
+					if ($new_grp) $grps[] = $new_grp;
+					break;
+				}
+			}
+		} while ($new_grp);
+		return [$ghash_stats, $grps, ];
+	}
+	
+	/*	Обработать контекстную группу, превратив ее в причесанную статью.
+		Контекстные группы документа можно выделить через context_groups().
+			$params - массив параметров. Ключи:
+				'content_text' - (строка) HTML-разметка. Это должно быть содержимое контентного узла (а не документ целиком). Получить его можно массой способов, применяя различные техники анализа. Одной из них является context_groups().
+				'url' - URL, откуда был скачан документ
+				'par_tags' - (массив) имена тегов, которые были использованы в роли параграфов (т.е. содержали основной текст), если у вас есть достоверная информация об этом. Пример: ['div', 'span', ]. В общем, здесь можно перечислить наиболее "текстосодержащие" типы тегов. Как используется: если теги перечисленных типов вылезут в "топ", то их имена будут заменены на параграф ("p"). Очевидно, тег "p" указывать в массиве нет смысла.
+				'remove_p_if_not_punct' - (bool) (по-умолчанию true) удалять параграфы, на конце которых отсутствует стандартная оканчивающая пунктуация (.?!:;).
+					Если равно true, то гарантируется чистота текстов, но иногда (относительно редко) теряет полезные параграфы.
+					Если равно false, то потерь будет меньше, но будет чуть больше мусора. Статьи будут гарантированно "полными копипастами" и картиночные посты с подписями будут парситься лучше.
+				'allow_p_in_tables' - (bool) (по-умолчанию true) разрешить параграфы внутри табличек.
+					Если равно true, то табличка не будет удаляться из-за наличия в ней параграфа.
+				'do_debug' - (bool) включить режим отладки
+		
+		Вернет один корневой dom-узел (новый документ), содержащий параграфы, списки, таблицы, итд.
+		Он готов к использованию ($x->outer()), но вы можете также произвести какую-то дополнительную фильтрацию или обработку узлов.
+		Оригинальные атрибуты тегов доступны в каждом узле результата в виде массива $node->ae_attrs.
+		Реальные же атрибуты сильно зачищены и почти отсутствуют, исключая некоторые атрибуты некоторых тегов (img, iframe).
+		Рекомендации по пост-обработке:
+			- картинки сразу скачиваем и проверяем на валидность (пока это еще узлы!), неподходящие удаляем.
+			- если осталось мало текста ( < 500 симв.) и при этом нет минимум 5 картинок, то можно удалять статью - это надежно защитит от треша
+			- ссылки (<a>) при желании можно полностью удалить, оставив от них анкорный текст
+			- рекомендуется отклонять статьи, которые полностью дублируют ранее полученные. Такое возможно со страницами cloudflare-ошибок (они могут все загадить).
+			- рекомендуется удалять параграфы, текст которых повторяется 2 и более раз в рамках *всего парсинга*.
+			- рекомендуется удалять картинки, которые повторяются по URLам в рамках *всего парсинга*
+			- рекомендуется фильтровать параграфы по своим спискам стоп-слов, такие как: "All rights reserved", "No Relared Posts", итд. Они и так чистые, но иногда дичь проскальзывает полиморфная (одна и та же приписка на разных сайтах может иметь разный вид).
+			- спаны (<span>) при желании можно полностью удалить (или заменить на strong/em), оставив от них анкорный текст
+			- блокквоты вставляем сами, вынося в одном из параграфов последнее предложение в отдельный тег <blockquote> вне параграфа.
+
+	*/
+	static public function article_filter($params)
+	{
+		extract($params);
+		if ($remove_p_if_not_punct===NULL) $remove_p_if_not_punct = true;
+		if ($allow_p_in_tables===NULL) $allow_p_in_tables = true;
+		/*
+			[ok] заранее делаем это: 
+				- наиболее классические phrase-теги заменяем на span.
+				- все остальные теги заменяем на параграф. параграфы не смогут быть вложенными и тем самым упростят общую структуру, предохранив информацию о делении пространства.
+				- пересобираем документ, чтобы вставленные параграфы применились
+				- "br" заменяем на "p"
+				- "th" заменяем на "td"
+				- "h1" заменяем на "h2"
+				- тег "meta" удаляем
+				- windows переносы строки изменяем на unix-стиль
+			Далее:
+				[ok] удаляем: form, h4, h5, h6
+				[ok] оставляем: img, ul, ol, li, h1, h2, h3, p, table, tr, td, th, thead, tbody, tfoot, em, strong, span.
+				[ok] изнутри h2, h3 удаляем всё кроме ссылок и текстов.
+				[ok] в любой табличке должно быть как минимум 2 строки и 4 ячейки, а также табличка должна содержать от 8 слов, не считая цифр.
+				[ok] внутри таблички не может быть тегов: table, iframe, h1, h2, h3, h4, h5, h6, ul, ol, li (иначе табличку удаляем).
+				[ok] внутри списков (ul, ol) можно: li, em, strong, span, a. Остальное нельзя.
+				[ok] список (ul, ol) удаляем, если после удаления ссылок (<a>) из него в нём не остается как минимум 10 слов, не считая цифр.
+				[ok] <a> удаляем полностью, если он содержит "&raquo;", "Read More" или подобные признаки.
+				[ok] всем тегам удаляем все атрибуты, кроме: <img src>, <iframe src>, <a href>
+			[ok] если вне таблицы встречаются теги: thead, tbody, tfoot, tr, td, th, то выворачиваем их.
+			[ok] картинки и фреймы, которые находятся вне таблиц нужно попросту "всплыть" наверх и оформить в параграф.
+			[ok] если какой-то тег доплыл до топа и это не параграф, и внутри нет параграфов, то заменить его на параграф (исключая некоторые).
+			[ok] URLы в картинках абсолютизируем, проверяем чтобы src был заполнен.
+			[ok] URLы во фреймах проверяем чтобы были абсолютные, иначе удаляем фрейм.
+			[ok] если какая-то картинка повторилась несколько раз (по URL), то все картинки с таким URL удаляем.
+			[ok] span, содержащий дату или время (2019.04.09 или 18:47).
+			[ok] ссылки <a>, находящиеся вне h1,h2,h3, и у которых атрибут href=#, либо есть атрибуты title, alt, class, id, name - удаляем полностью, включая ссылочный текст.
+			[ok] вложенные span/em/strong выворачиваем.
+			[ok] всё это нужно делать через многократные повторы, до тех пор, пока хоть что-то модифицируется.
+			[ok] множественные пробелы в текстовых узлах заменяем на одиночные.
+			[ok] оформляем в параграфы голые тексты, оказавшиеся в топовом узле, включая в такие группы также phrase-теги (a, em, strong, span).
+			[ok] слишком длинные (по тексту) a/span/strong/em выворачиваем.
+			[ok] удаляем относительно короткие "span" в конце параграфа
+			[ok] удаляем серии идущих подряд заголовков, исключая последний заголовок в такой серии.
+			[ok] выворачиваем span/em/strong когда они почти полностью занимают собой параграф. Если еще при этом он достаточно короткий и является span'ом, то удаляем весь параграф.
+			[ok] удаляем параграф, если в нем ссылочного текста 80%.
+			[ok] удаляем параграф, расположенный на конце документа, если он заканчивается на двоеточие.
+			[ok] удаляем параграф, если в нем есть буквы, но их меньше 10.
+			[ok] удаляем параграф, если на конце него нет одного из основных знаков препинания (.?!:;).
+			[ok] удаляем параграфы, которые начинаются с маленькой буквы.
+			[ok] если в самом конце статьи ссылка (<a>) или <span>, то этот элемент удаляем.
+			[ok] если в самом конце статьи заголовок, то удаляем его.
+			[ok] после завершающих тегов </h1>, </h2>, </h3>, </p>, </ul>, </li>, </blockquote>, </table>, </thead>, </tbody>, </tfoot>, </tr>, </td>  ставится перенос строки.
+			[ok] удаляем параграфы, текст которых повторяется 2 и более раз в рамках статьи
+			
+		*/
+		
+		if (!$par_tags) $par_tags = [];
+		$par_tags = array_diff($par_tags, ['p', ]);
+		
+		$s = $content_text;
+		
+		/*	заменяем:
+				- "br" на параграф (это делается отдельно, т.к. br - это тег незакрывающегося типа)
+				- "h1" на "h2"
+				- "th" на "td"
+				- мета-теги (микроразметка) удаляем
+				- переносы строки в windows-стиле удаляем
+				- нестандартные пробелы заменяем на простой пробел
+		*/
+		
+		$s = preg_replace(
+			[
+				'#<br(?=[\s\>/])[^>]*>#i', 
+				'#<h1(?=\s|\>)#i', 
+				'#</h1>#i', 
+				'#<th(?=\s|\>)#i', 
+				'#</th>#i', 
+				'#<b(?=\s|\>)#i', 
+				'#</b>#i', 
+				'#<i(?=\s|\>)#i', 
+				'#</i>#i', 
+				'#\r#',
+				'#&nbsp;?|&\#160;?|&\#xA0;?|\x{a0}#siu',
+			],
+			[
+				'<p>', 
+				'<h2', 
+				'</h2>', 
+				'<td',  
+				'</td>', 
+				'<strong',  
+				'</strong>', 
+				'<em',  
+				'</em>', 
+				'',
+				' ',
+			],
+		$s);
+		
+		// наиболее классические phrase-теги заменяем на "span"
+		$reg1 = implode('|', ['abbr', 'acronym', /*'address', 'b', 'bdi', 'bdo', 'big', 'center',*/ 'cite', 'code', 'data', 'del', 'dfn', /*'em',*/ 'font', /*'i',*/ 'ins', 'kbd', 'mark', 'q', 's', 'samp', 'small', /*'span',*/ 'strike', /*'strong',*/ 'sub', 'sup', 'tt', 'u', 'var', ]);
+		$s = preg_replace(
+			['#<(?:'.$reg1.')(?=\>|\s)#i', '#</(?:'.$reg1.')>#i', ],
+			['<span', '</span>', ],
+		$s);
+		
+		// все теги кроме перечисленных здесь ("остальное") заменяем на параграф
+		$reg2 = implode('|', ['form', 'p', 'a', 'span', 'iframe', 'table', 'tr', 'td', 'th', 'thead', 'tbody', 'tfoot', 'em', 'strong', 'img', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'ul', 'ol', 'li', ]);
+		$s = preg_replace(
+			'#</?(?!(?:'.$reg2.')(?=\>|\s))\w+(?=\>|\s)#i', 
+			// (!) именно открывающий тег! 
+			// т.е. даже в случае закрывашек создается новая открывашка для параграфа (которая, в свою очередь, закроет предыдущий параграф).
+			'<p',
+		$s);
+		
+		// $s = preg_replace('#<p>(\s*<p>)+#', '<p>', $s);
+		
+		$x = new html();
+		$x->inner($s);
+		$x->autoclose();
+		
+		$debug = [];
+		$cycle = 0;
+		$src_stats = [];
+		do {
+			$total = 0;
+			$cycle++;
+			$debug_func = function($n, $descr)use(&$debug, &$total){
+				$debug['#1: '.$descr][] = $n->outer();
+			};
+			$x->iterate(function($n, &$c)use($url, $par_tags, $remove_p_if_not_punct, $allow_p_in_tables, &$src_stats, $cycle, $debug_func, &$total, $do_debug){
+						
+				// [уже убраны, см. выше] убираем пробелы в текстовых узлах, представленные в виде html-entity
+				// if ($cycle > 1 && $n->tag=='#text' && !$n->nbsp_removed)
+				// {
+					// $n->nbsp_removed = true;
+					// $n->tag_block = preg_replace('#(&nbsp;?)+#i', ' ', $n->tag_block, -1, $repl_c);
+					// if ($repl_c) $n->invalidate();
+				// }
+				
+				$reasons = [];
+				if (
+					($reasons['html-комментарии, а также: form, h4, h5, h6'] = (
+						in_array($n->tag, ['#comment', 'form', 'h4', 'h5', 'h6', ])
+					)) ||
+					($reasons['абсолютно пустые текстовые элементы (без текста)'] = (
+						$n->tag=='#text' && 
+						$n->tag_block===''
+					)) ||
+					($reasons['пустые элементы'] = (
+						!in_array($n->tag, ['#text', 'img', 'iframe', 'td', 'br', ]) &&
+						(
+							$n->children===[] ||
+							// т.к. может состоять из нескольких текстовых узлов
+							trim($n->inner())===''
+						)
+					)) ||
+					($reasons['потерянные закрывающие теги'] = (
+						$n->tag=='#text' && 
+						preg_match('#^</\w+>$#', $n->tag_block)
+					)) || 
+					($reasons['текстовый элемент содержит escaped-теги (вероятно он служебный)'] = (
+						$n->tag=='#text' && 
+						preg_match('#&lt;\w|&gt;?&lt#i', $n->tag_block)
+					)) || 
+					($reasons['ссылки (<a>), имеющие пустой href, либо ajax-подобный href'] = (
+						$n->tag=='a' && 
+						preg_match('#\shref=(\#|["\']\#?["\'\s]|["\']?javascript:)#i', $n->tag_block)
+					)) ||
+					($reasons['если "a" или "span" похожи на кнопку "читать далее"'] = (
+						in_array($n->tag, ['a', 'span', ]) && 
+						// есть характерный ссылочный текст
+						preg_match('#\[|&raquo;|\b(read|see|explore|learn|show|view)\s+more\b|»|&gt;\s*&gt;#ui', $n->inner()) && 
+						// и внутри нет тегов, а также открывающих кавычек
+						!preg_match('#&laquo;|«|\<#ui', $n->inner()) &&
+						// и букв относительно немного
+						preg_match_all('#(?!\d)\w#u', $n->strip()) < 60
+					)) ||
+					// на википедии не робит из-за классов и тайтлов :-/
+					// ($reasons['нестандартные ("нестатейные") ссылки удаляем полностью'] = (
+						// $n->tag=='a' &&
+						// ($attrs = $n->attrs()) &&
+						// ($attrs['href']=='#' || array_intersect_key($attrs, ['class'=>'', 'id'=>'', 'title'=>'', 'name'=>'', ])) &&
+						// !html::stack_have(['h1', 'h2', 'h3', 'h4', 'h5', 'h6', ], $c)
+					// )) ||
+					($reasons['гавеные фреймы'] = (
+						$n->tag=='iframe' &&
+						($attrs = $n->attrs()) &&
+						!preg_match('#^https?://#i', $attrs['src'])
+					)) ||
+					// таблички...
+					(
+						$n->tag=='table' &&
+						(
+							// (!) если убрать из регулярки параграф ("p"), то сможет парсить "расширенные таблички", часто встречающиеся на торрент-сайтах.
+							($reasons['внутри табличек не может быть других табличек, а также фреймов, списков, заголовков, параграфов'] = 
+								preg_match('#<(table|iframe|h\d|ul|ol|li'.($allow_p_in_tables?'':'|p').')\b#i', $n->inner())) || 
+							($reasons['в табличке должно быть хотя бы несколько слов'] = 
+								(preg_match_all('#(?!\d)\w+#u', $n->strip()) < 8)
+							) ||
+							($reasons['в табличке должно быть как минимум 2 строки и 4 ячейки'] = 
+								(preg_match_all('#<tr\b#i', $n->inner()) < 2) ||
+								(preg_match_all('#<td\b#i', $n->inner()) < 4)
+							) || 
+							false
+						)
+					) ||
+					// списки...
+					(
+						(
+							in_array($n->tag, ['ul', 'ol', ]) &&
+							(
+								// параграфы должны быть разрешены внутри списков, т.к. мы заменяем <br> на параграф,
+								// и они у нас возникают даже там, где их нет изначально.
+								($reasons['внутри списков можно только определенные элементы (li/em/strong/span/a/p)'] = 
+									(preg_match('#<(?!(?:li|em|strong|span|a|p)\b)\w+\b#i', $n->inner()))) ||
+								($reasons['кол-во слов в списке (без тегов) за полным вычетом ссылок должно быть >= 7'] = 
+									(preg_match_all('#(?!\d)\w+#u', strip_tags(preg_replace('#<a\s.*?</a>#si', '', $n->inner()))) < 7)) ||
+								false
+							)
+						) ||
+						(
+							$n->tag=='li' &&
+							(
+								($reasons['внутри элемента списка не должно быть более 2 параграфов, каждый из которых содержит текст после него'] = 
+									(preg_match_all('#(<p\b[^>]*>\s*)+\w#ui', $n->inner()) >= 3)) ||
+								false
+							)
+						)
+					) ||
+					($reasons['элементы списков, находящиеся вне списков'] = (
+						($n->tag=='li' && !html::stack_have(['ul', 'ol', ], $c)) ||
+						(in_array($n->tag, ['dt', 'dd', ]) && !html::stack_have(['dl', ], $c)) ||
+						false
+					)) ||
+					($reasons['определенные теги, содержащие хотя бы одну цифру в своем strip-контенте и когда при этом в нем содержится мало буквенных символов'] = (
+						in_array($n->tag, ['p', 'span', 'em', 'strong', 'ul', 'ol', /*'li',*/ ]) &&
+						(($q = $n->strip())!==NULL) &&
+						preg_match('#\d#', $q) &&
+						preg_match_all('#(?!\d)\w#u', $q) < 15
+					)) || 
+					($reasons['теги <a>, содержащие даты либо время'] = (
+						in_array($n->tag, ['a', ]) &&
+						(($q = $n->strip())!==NULL) &&
+						preg_match('#\b\d{1,2}\b\s+\w{3}\s+20\d\d\b|\b\d\d?:\d\d\b|\b(?<!\.)(\d{2}|\d{4})[\./\\\\]\d{1,2}[\./\\\\]\d{1,2}(?!\.)\b#u', $q)
+					)) || 
+					($reasons['почти любые теги внутри заголовков удаляются'] = (
+						!in_array($n->tag, ['#text', 'a', ]) &&
+						($hdr = html::stack_have(['h1', 'h2', 'h3', 'h4', 'h5', 'h6', ], $c)) &&
+						// но только если удаление тега не приведет к полному опустошению заголовка
+						str_replace($n->strip(), '', $hdr->strip()) > 25
+					)) ||
+					($reasons['ссылки, содержащие в себе phrase-теги удаляем'] = (
+						$n->tag=='a' &&
+						preg_match('#<(strong|span|em)\b#i', $n->inner())
+					)) ||
+					false
+				)
+				{
+					if ($do_debug)
+					{$debug_func($n, key(array_filter($reasons)));}
+					$total++;
+					$n->remove();
+					$c['skip'] = true;
+					return;
+				}
+				
+				if ($c['level']==0 && in_array($n->tag, $par_tags))
+				{
+					// то заменяем ему имя на "p"
+					if ($do_debug)
+					{$debug_func($n, 'в топовые узлы вылез тег, который был в оригинале "параграфом"');}
+					$total++;
+					$n->change('p');
+				}
+				
+				if (in_array($n->tag, ['img', 'iframe', ]) &&
+					!$n->popped &&
+					!html::stack_have(['table', ], $c)
+				)
+				{
+					if ($do_debug)
+					{$debug_func($n, 'img и iframe "всплываем" наверх и оформляем в параграфы, но это не относится к тегам, находящимся внутри табличек');}
+					$total++;
+					$n->popped = true;
+					$n->pop();
+					$n->encapsulate('p');
+					$c['rewind_level'] = 0;
+					return;
+				}
+				
+				$reasons = [];
+				if (
+					($reasons['если у табличного тега среди родителей нет таблички, то такой тег выворачиваем'] = 
+					(
+						in_array($n->tag, ['tr', 'td', 'th', 'thead', 'tbody', 'tfoot', ]) &&
+						!html::stack_have(['table', ], $c)
+					)) ||
+					($reasons['вложенные span/strong/em'] = (
+						(in_array($n->tag, ['span', 'strong', 'em', ]) && html::stack_have(['strong', 'em', ], $c)) ||
+						(in_array($n->tag, ['span', ]) && html::stack_have(['span', ], $c))
+					)) ||
+					($reasons['слишком длинные a/span/strong/em выворачиваем'] = (
+						(
+							in_array($n->tag, ['a', 'span', 'strong', 'em', ]) &&
+							preg_match_all('#\w#u', $n->strip()) > 60
+						)
+					)) ||
+					false
+				)
+				{
+					if ($do_debug)
+					{$debug_func($n, key(array_filter($reasons)));}
+					$total++;
+					$n->pull_up();
+					$c['rewind_level'] = $c['level'];
+					return;
+				}
+				
+				// множественные пробелы заменяем на одиночные
+				if ($n->tag=='#text' && !$n->multispaces)
+				{
+					$n->multispaces = true;
+					if (!in_array($n->tag_block, [' ', ''], true))
+					{$n->tag_block = preg_replace('#^\s+|\s+$|\s{2,}#', ' ', $n->tag_block);}
+				}
+				
+				// атрибуты всем тегам удаляем, кроме некоторых
+				if ($n->tag!='#text' && $n->ae_attrs===NULL)
+				{
+					$n->ae_attrs = $n->attrs();
+					$a = [];
+					$a2 = $n->ae_attrs;
+					switch ($n->tag)
+					{
+						case 'a':
+							if ($a2['href'])
+							{
+								$a = array_intersect_key($a2, array_flip(['href', ]));
+								$a['href'] = url_abs($a['href'], $url);
+							}
+						break;
+						case 'img':
+							if ($a2['data-lazy-src']) $a2['src'] = $a2['data-lazy-src'];
+							elseif ($a2['data-src']) $a2['src'] = $a2['data-src'];
+							elseif ($a2['srcset'])
+							{
+								$z = [];
+								foreach (explode(',', $a2['srcset']) as $e)
+								{
+									list($s, $num) = preg_split('#\s+#', trim($e));
+									if ($num = (float)preg_replace('#\D#', '', $num))
+									{$z[$num] = $s;}
+								}
+								krsort($z);
+								if ($srcset = reset($z))
+								{$a2['src'] = $srcset;}
+							}
+							if ($a2['src'])
+							{
+								$a = array_intersect_key($a2, array_flip(['src', ]));
+								$a['src'] = url_abs($a['src'], $url);
+								$src_stats[$a['src']][] = $n;
+							}
+						break;
+						case 'iframe':
+							// фреймы уже проверены на валидность
+							$a = array_intersect_key($a2, array_flip(['src', 'width', 'height', 'border', 'frameborder', 'allowfullscreen', ]));
+						break;
+					}
+					// в общем случае все атрибуты стираются, но остаются доступными через $node->ae_attrs
+					$n->attrs($a);
+				}
+			});
+			
+			// если какая-то картинка повторилась несколько раз, то ее удаляем
+			foreach ($src_stats as $v)
+			{
+				if (count($v)>1)
+				{
+					foreach ($v as $vv) $vv->remove();
+					if ($do_debug)
+					{$debug_func($vv, 'картинка удалена из-за её повторов');}
+					$total++;
+				}
+			}
+			$src_stats = [];
+			
+			// нерекурсивные проверки на топовом левеле
+			do {
+				$total2 = 0;
+				$debug_func = function($text, $descr)use(&$debug){
+					$debug['#2: '.$descr][] = $text;
+				};
+				// сгруппировать "голые" теги, вылезшие в топовый узел без обертки параграфом
+				$buf2 = $bufs = [];
+				$have_tsse = false;
+				foreach ($x->children as $v)
+				{
+					if (
+						in_array($v->tag, ['a', 'strong', 'span', 'em']) ||
+						// чтобы первый элемент не был пробельным текстовым
+						($v->tag=='#text' && ($buf2 || trim($v->tag_block)!==''))
+					)
+					{
+						$have_tsse = true;
+						$buf2[] = $v;
+					}
+						else
+					{
+						if ($buf2)
+						{
+							$bufs[] = $buf2;
+							$buf2 = [];
+						}
+						$bufs[] = $v;
+					}
+				}
+				if ($buf2) $bufs[] = $buf2; // слить возможный буфер
+				if ($have_tsse)
+				{
+					$new = [];
+					foreach ($bufs as $v)
+					{
+						if (is_array($v))
+						{
+							// пробельные текстовые элементы на начале и на конце размещаем вне параграфа.
+							// это важно, т.к. иначе на некоторых стыках пробелы исчезнут полностью, слепив до этого разделенные между собой теги.
+							$add_after = [];
+							while (($e = reset($v)) && $e->tag=='#text' && trim($e->tag_block)==='')
+							{$new[] = array_shift($v);}
+							while (($e = end($v)) && $e->tag=='#text' && trim($e->tag_block)==='')
+							{$add_after[] = array_pop($v);}
+							
+							$prg = new html();
+							$prg->tag = 'p';
+							$prg->tag_block = '<p>';
+							$prg->closer = '</p>';
+							$prg->parent = $x;
+							$prg->append($v);
+							$new[] = $prg;
+							foreach ($add_after as $e) $new[] = $e;
+							if ($do_debug)
+							{$debug_func(html::render($v), 'голые группы тегов #text/a/strong/span/em в топовом узле упаковываются в параграф');}
+							$total2++;
+						}
+							else
+						{$new[] = $v;}
+					}
+					$x->children = $new;
+					$x->invalidate();
+				}
+				
+				// проверки на недопустимые элементы в самом конце статьи
+				foreach (array_reverse($x->children) as $v)
+				{
+					// тексты пропускаем до первого нетекстового элемента
+					if ($v->tag=='#text')
+					{continue;}
+					if (in_array($v->tag, ['a', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', ]))
+					{
+						$v->remove();
+						if ($do_debug)
+						{$debug_func($v->outer(), 'если на конце документа заголовок или ссылка, то удаляем такой тег');}
+						$total2++;
+					}
+						else
+					{
+						// $v - первый с конца контейнер документа
+						foreach (array_reverse($v->children) as $vv)
+						{
+							// тексты, не содержащие букв пропускаем до первого нетекстового элемента.
+							// Это позволит обработать ситуации вида: текст текст <a>ссылка<a>[точка].
+							if ($vv->tag=='#text' && !preg_match('#\p{L}#u', $vv->tag_block))
+							{continue;}
+							if (in_array($vv->tag, ['a', 'span', ]))
+							{
+								$vv->remove();
+								if ($do_debug)
+								{$debug_func($vv->outer(), 'если внутри последнего контейнера документа на конце "a" или "span", то удаляем это');}
+								$total2++;
+							}
+							break;
+						}
+						if ($v->tag=='p')
+						{
+							if (
+								preg_match('#(\.\.\.|&hellip;|…)$#u', $v->strip()) &&
+								preg_match_all('#\w#u', $v->strip()) < 30
+							)
+							{
+								$v->remove();
+								if ($do_debug)
+								{$debug_func($v->outer(), 'если текст в параграфе на конце документа достаточно короткий и содержит на конце многоточие');}
+								$total2++;
+							}
+							elseif (preg_match('#(:)$#u', $v->strip()))
+							{
+								$v->remove();
+								if ($do_debug)
+								{$debug_func($v->outer(), 'если текст в параграфе на конце документа содержит на конце двоеточие');}
+								$total2++;
+							}
+							elseif (
+								!preg_match('#\p{Ll}#u', $v->strip()) &&
+								preg_match('#\p{Lu}#u', $v->strip())
+							)
+							{
+								$v->remove();
+								if ($do_debug)
+								{$debug_func($v->outer(), 'если текст в параграфе на конце документа написан капсом, то он удаляется');}
+								$total2++;
+							}
+						}
+					}
+					break;
+				}
+				
+				// проверки всех топовых элементов
+				$prev_h = $last_p = NULL;
+				$p_hashes = [];
+				foreach ($x->children as $v)
+				{if ($v->tag=='p') $p_hashes[$v->strip()]++;}
+				foreach ($x->children as $v)
+				{
+					if (in_array($v->tag, ['h1', 'h2', 'h3', 'h4', 'h5', 'h6', ]))
+					{
+						if (preg_match('#[\[\]\|@\{\};]#', $v->strip()))
+						{
+							$v->remove();
+							if ($do_debug)
+							{$debug_func($v->outer(), 'заголовки, содержащие нехарактерные символы');}
+							$total2++;
+							continue;
+						}
+						if (strpos($v->inner(), '<')!==false)
+						{
+							$v->inner($v->strip());
+							if ($do_debug)
+							{$debug_func($v->outer(), 'любые теги внутри заголовков исчезают, оставляя свой анкорный текст');}
+							$total2++;
+						}
+						// удаляет серии из заголовков, идущих подряд, исключая последний
+						if ($prev_h)
+						{
+							$prev_h->remove();
+							if ($do_debug)
+							{$debug_func($prev_h->outer(), 'серийные заголовки удаляем кроме последнего заголовка в такой серии');}
+							$total2++;
+						}
+						$prev_h = $v;
+					}
+						else
+					{
+						// серию заголовков не прерываем, если между ними находятся текстовые элементы, состоящие из пробелов
+						if (!($v->tag=='#text' && !trim($v->tag_block)))
+						{$prev_h = NULL;}
+						
+						if ($v->tag=='p')
+						{
+							$last_p = $v;
+							$s = $v->strip();
+							if ($s && $p_hashes[$s] >= 2)
+							{
+								$v->remove();
+								if ($do_debug)
+								{$debug_func($v->outer(), 'удаляем все параграфы, которые повторялись по тексту');}
+								$total2++;
+								continue;
+							}
+							
+							// кол-во букв в параграфе
+							$c_count = preg_match_all('#(?!\d)\w#u', $s);
+							// кол-во слов в параграфе
+							$w_count = preg_match_all('#\b(?!\d)\w+#u', $s);
+							// кол-во ссылок в параграфе
+							$a_count = preg_match_all('#<a\s#i', $v->inner());
+							
+							if ($c_count) // чтобы не стерло картинки и фреймы
+							{
+								if ($remove_p_if_not_punct)
+								{
+									if (!preg_match('#[\.\?!:;]$#u', $v->strip()))
+									{
+										$v->remove();
+										if ($do_debug)
+										{$debug_func($v->outer(), 'удаляем параграфы, где на конце нет знаков препинания (.?!:;)');}
+										$total2++;
+										continue;
+									}
+								}
+								if (preg_match('#^\p{Ll}#u', $v->strip()))
+								{
+									$v->remove();
+									if ($do_debug)
+									{$debug_func($v->outer(), 'удаляем параграфы, которые начинаются с маленькой буквы');}
+									$total2++;
+									continue;
+								}
+								if ($c_count < 10)
+								{
+									$v->remove();
+									if ($do_debug)
+									{$debug_func($v->outer(), 'удаляем параграфы, в которых есть буквы, но их меньше 10');}
+									$total2++;
+									continue;
+								}
+							}
+							
+							if ($a_count>1 && $w_count/$a_count < 2)
+							{
+								$v->remove();
+								if ($do_debug)
+								{$debug_func($v->outer(), 'удаляем параграфы, в которых минимум 2 ссылки и при этом соотношение количества слов к количеству ссылок слишком большое. Например 5 слов и 3 ссылки.');}
+								$total2++;
+								continue;
+							}
+							// тег => минимальное_количество_букв, которое должно остаться после его удаления, чтобы не был удален весь параграф
+							$min_sizes = ['span' => 1, 'a' => 6, ];
+							foreach ($min_sizes as $tag=>$symb_count)
+							{
+								$s = preg_replace('#<'.$tag.'\b.*?</'.$tag.'>#si', '', $v->inner(), -1, $repl_sz);
+								if ($repl_sz && preg_match_all('#(?!\d)\w#u', strip_tags($s)) < $symb_count)
+								{
+									$v->remove();
+									if ($do_debug)
+									{$debug_func($v->outer(), 'удаляем параграф, который полностью (либо почти полностью) состоит из '.$tag.'\'ов. Использован порог из '.$symb_count.' букв');}
+									$total2++;
+									continue 2;
+								}
+							}
+						
+							// это нельзя делать раньше (внутри iterate())
+							do {
+								foreach ($v->children as $vv)
+								{
+									if (in_array($vv->tag, ['span', 'strong', 'em', ]) &&
+										preg_match_all('#\w#u', str_replace($vv->strip(), '', $v->strip())) <= 1
+									)
+									{
+										if ($vv->tag=='span' && preg_match_all('#\w#u', $v->strip()) < 25)
+										{
+											$v->remove();
+											if ($do_debug)
+											{$debug_func($v->outer(), 'удаляем параграф, который очень короткий и на 99% состоит из span');}
+											$total2++;
+											continue 3;
+										}
+									
+										$vv->pull_up();
+										if ($do_debug)
+										{$debug_func($vv->outer(), 'тег span/em/strong выворачиваем, если он почти полностью занимает собой параграф');}
+										$total2++;
+										continue 2;
+									}
+								}
+								break;
+							} while (true);
+							
+							// ищем элемент с конца
+							foreach (array_reverse($v->children) as $vv)
+							{
+								// тексты пропускаем до первого нетекстового элемента.
+								// но не все, а лишь состоящие из пробелов, чисел и нестандартной пунктуации.
+								// Это позволит обработать ситуации вида: текст текст <a>ссылка<a>[требуха].
+								if ($vv->tag=='#text' && preg_match('#^(\s|\d|_|[^\.,\?!:;\w])*$#u', $vv->tag_block))
+								{continue;}
+								// $vv - последний нетекстовый элемент внутри параграфа, без пропуска букв
+								if ($vv->tag=='span')
+								{
+									if (!preg_match('#<#', $vv->inner()) &&
+										preg_match_all('#(?!\d)\w#u', str_replace($vv->strip(), '', $vv->parent->strip())) > 10
+									)
+									{
+										$vv->remove();
+										if ($do_debug)
+										{$debug_func($vv->outer(), 'span\'ы на конце параграфов удаляем, если внутри них нет тегов и после них нет ничего либо есть всего лишь ".?!" с пробелами, и если при этом span не занимает параграф целиком');}
+										$total2++;
+									}
+								}
+								break;
+							}
+						}
+					}
+				}
+				
+				if ($last_p && preg_match('#©#u', $last_p->strip()))
+				{
+					$last_p->remove();
+					if ($do_debug)
+					{$debug_func($last_p->outer(), 'удаляем последний параграф, если в нем содержится значок ©');}
+					$total2++;
+				}
+				
+			} while ($total2);
+			$total += $total2;
+		} while ($total > 0);
+		
+		if ($do_debug)
+		{var_dump($debug);}
+		
+		return $x;
 	}
 	
 	protected function search_recurse($reg, &$result, $func)
@@ -1749,97 +2783,103 @@ class html {
 				// тег открылся.
 				
 				// список специальных тегов, которые игнорируют любые другие теги пока сами не закроются.
-				if (!$is_xml && in_array($name, HTML_ELEMENTS_SPECIAL))
-				{$special_opened = $name;}
-					else
+				if (!$is_xml)
 				{
-					/*	Делается проверка родителей для текущего тега ($name). 
-							$blocked_parents - если среди родителей текущего тега ($name) будет найден один из этих тегов ("неправильный" родитель), то он будет закрыт. Ищется максимально топовый.
-							$stoppers - список тегов, *до* которых родители (при пути наверх) будут проверяться: если встречен - проверка прерывается.
-					*/
-					$stoppers = $blocked_parents = [];
-					switch ($name)
+					if (in_array($name, HTML_ELEMENTS_SPECIAL))
+					{$special_opened = $name;}
+						else
 					{
-						case 'p':
-						case 'a':
-						case 'option':
-						case 'optgroup':
-						case 'html':
-							// если среди родителей у элементов этого типа попадается элемент такого же типа, то этот родитель закрывается
-							$blocked_parents = [$name, ];
-						break;
-						case 'h1':
-						case 'h2':
-						case 'h3':
-						case 'h4':
-						case 'h5':
-						case 'h6':
-						case 'form':
-						case 'table':
-							$blocked_parents = ['p', ];
-						break;
-						case 'li':
-						case 'dd':
-						case 'dt':
-							$stoppers = ['ul', 'ol', 'dl', 'dir'];
-							$blocked_parents = ['li', 'dd', 'dt'];
-						break;
-						case 'head':
-						case 'body':
-							$blocked_parents = ['head', 'body']; // т.е. head будет закрыт, если он попытается быть родителем для body (и наоборот)
-						break;
-						case 'td':
-						case 'th':
-							$blocked_parents = ['td', 'th', 'caption', 'colgroup', 'col'];
-							$stoppers[] = 'table';
-						break;
-						case 'tr':
-							$blocked_parents = ['tr', 'td', 'th', 'caption', 'colgroup', 'col'];
-							$stoppers[] = 'table';
-						break;
-						case 'thead':
-						case 'tbody':
-						case 'tfoot':
-							$blocked_parents = ['thead', 'tbody', 'tfoot', 'td', 'tr', 'th', 'caption', 'colgroup', 'col'];
-							$stoppers[] = 'table';
-						break;
-						case 'caption':
-						case 'colgroup':
-							$blocked_parents = ['caption', 'colgroup', 'col'];
-							$stoppers[] = 'table';
-						break;
-						case 'col':
-							$blocked_parents = ['col', 'tr', 'td', 'th', 'caption'];
-							$stoppers[] = 'table';
-						break;
-					}
-					
-					// единственные теги, которые можно внутри h1-h6:
-					if (!in_array($name, ['tt', 'i', 'b', 'big', 'small', 'em', 'strong', 'dfn', 'code', 'samp', 'kbd', 'var', 'cite', 'abbr', 'acronym', 'a', 'img', 'object', 'br', 'script', 'map', 'q', 'sub', 'sup', 'span', 'bdo', 'input', 'select', 'textarea', 'label', 'button', ]))
-					{
-						$blocked_parents[] = 'h1';
-						$blocked_parents[] = 'h2';
-						$blocked_parents[] = 'h3';
-						$blocked_parents[] = 'h4';
-						$blocked_parents[] = 'h5';
-						$blocked_parents[] = 'h6';
-					}
-					
-					if ($blocked_parents)
-					{
-						$n = 0;
-						$found_n = -1;
-						foreach ($parent_stack as $e)
+						/*	Делается проверка родителей для текущего тега ($name). 
+								$blocked_parents - если среди родителей текущего тега ($name) будет найден один из этих тегов ("неправильный" родитель), то он будет закрыт. Ищется максимально топовый.
+								$stoppers - список тегов, *до* которых родители (при пути наверх) будут проверяться: если встречен - проверка прерывается.
+							Используются именно in_array() и именно динамическое составление - выходит быстрее! Проверено!
+						*/
+						$stoppers = $blocked_parents = [];
+						
+						// элементы, которые не могут быть вложенными в такие же элементы
+						if (in_array($name, HTML_ELEMENTS_NON_NESTED))
+						{$blocked_parents[] = $name;}
+						if (in_array($name, HTML_ELEMENTS_NON_PARAGRAPH))
+						{$blocked_parents[] = 'p';}
+						// (!) вот это не тестил
+						if (in_array($name, HTML_ELEMENTS_NON_HEADER))
 						{
-							if (in_array($e->tag, $stoppers)) break;
-							if (in_array($e->tag, $blocked_parents))
-							{$found_n = $n;}
-							$n++;
+							$blocked_parents[] = 'h1';
+							$blocked_parents[] = 'h2';
+							$blocked_parents[] = 'h3';
+							$blocked_parents[] = 'h4';
+							$blocked_parents[] = 'h5';
+							$blocked_parents[] = 'h6';
 						}
-						if ($found_n>=0)
+						switch ($name)
 						{
-							$parent_stack = array_slice($parent_stack, $found_n+1);
-							$curr_parent = ($parent_stack?reset($parent_stack):$this);
+							case 'li':
+							case 'dd':
+							case 'dt':
+								foreach (['li', 'dd', 'dt'] as $v) $blocked_parents[] = $v;
+								foreach (['ul', 'ol', 'dl', 'dir'] as $v) $stoppers[] = $v;
+							break;
+							case 'head':
+							case 'body':
+								// т.е. head будет закрыт, если он попытается быть родителем для body (и наоборот)
+								$blocked_parents[] = 'head';
+								$blocked_parents[] = 'body';
+							break;
+							case 'td':
+							case 'th':
+								// 'col' сюда не имеет смысла добавлять, т.к. это void-элемент
+								foreach (['td', 'th', 'caption', 'colgroup', ] as $v) $blocked_parents[] = $v;
+								$stoppers[] = 'table';
+							break;
+							case 'tr':
+								// 'col' сюда не имеет смысла добавлять, т.к. это void-элемент
+								foreach (['tr', 'td', 'th', 'caption', 'colgroup', ] as $v) $blocked_parents[] = $v;
+								$stoppers[] = 'table';
+							break;
+							case 'thead':
+							case 'tbody':
+							case 'tfoot':
+								// 'col' сюда не имеет смысла добавлять, т.к. это void-элемент
+								foreach (['thead', 'tbody', 'tfoot', 'td', 'tr', 'th', 'caption', 'colgroup', ] as $v) $blocked_parents[] = $v;
+								$stoppers[] = 'table';
+							break;
+							case 'caption':
+							case 'colgroup':
+								// 'col' сюда не имеет смысла добавлять, т.к. это void-элемент
+								$blocked_parents[] = 'caption';
+								$blocked_parents[] = 'colgroup';
+								$stoppers[] = 'table';
+							break;
+							case 'col':
+								// 'col' сюда не имеет смысла добавлять, т.к. это void-элемент
+								foreach (['tr', 'td', 'th', 'caption'] as $v) $blocked_parents[] = $v;
+								$stoppers[] = 'table';
+							break;
+						}
+						
+						// единственные теги, которые можно внутри h1-h6. Остальные прервут любой заголовок.
+						// if (!in_array($name, ['tt', 'i', 'b', 'big', 'small', 'em', 'strong', 'dfn', 'code', 'samp', 'kbd', 'var', 'cite', 'abbr', 'acronym', 'a', 'img', 'object', 'br', 'map', 'q', 'sub', 'sup', 'span', 'bdo', 'input', 'select', 'textarea', 'label', 'button', ]))
+						// {
+							// foreach (['h1', 'h2', 'h3', 'h4', 'h5', 'h6', ] as $v)
+							// {$blocked_parents[] = $v;}
+						// }
+						
+						if ($blocked_parents)
+						{
+							$n = 0;
+							$found_n = -1;
+							foreach ($parent_stack as $e)
+							{
+								if (in_array($e->tag, $stoppers)) break;
+								if (in_array($e->tag, $blocked_parents))
+								{$found_n = $n;}
+								$n++;
+							}
+							if ($found_n>=0)
+							{
+								$parent_stack = array_slice($parent_stack, $found_n+1);
+								$curr_parent = ($parent_stack?reset($parent_stack):$this);
+							}
 						}
 					}
 				}
