@@ -30,7 +30,6 @@
 		- html-entities не декодируются кроме как в атрибутах
 		- может парсить XML файлы (но трактовать документ будет как HTML, в некоторых случаях это может влиять на корректность разбора)
 		- блоки CDATA не замечает, читает их как и остальной (обычный) текст
-		- класс html можно пронаследовать и что-то модифицировать или добавить свойства/методы
 		- "открепленный узел" свое состояние не меняет, с ним можно продолжать работу, но стоит понимать, что он помнит своего (прежнего) родителя и находится в невалидном состоянии (значение parent у него невалидно). Сделать его валидным снова можно передав его в качестве параметра любой из функций:
 			- append()
 			- prepend()
@@ -74,15 +73,15 @@ define('HTML_ELEMENTS_HEAD',  ['base', 'basefont', 'bgsound', 'link', 'meta', 's
 define('HTML_ELEMENTS_OBSOLETE', ['acronym', 'applet', 'basefont', 'bgsound', 'big', 'blink', 'center', 'command', 'data', 'dir', 'font', 'frame', 'frameset', 'hgroup', 'isindex', 'listing', 'marquee', 'nobr', 'noembed', 'noframes', 'plaintext', 'shadow', 'spacer', 'strike', 'tt', 'xmp', ]);
 // элементы, добавленные в HTML5
 define('HTML_ELEMENTS_HTML5', ['article', 'aside', 'bdi', 'details', 'dialog', 'figcaption', 'figure', 'footer', 'header', 'main', 'mark', 'menuitem', 'meter', 'nav', 'progress', 'rp', 'rt', 'ruby', 'section', 'summary', 'time', 'wbr', 'datalist', 'keygen', 'output', ]);
-// используются здешним парсером: теги, не имеющие закрывающих. В режиме XML этот список не учитывается.
+// !!Не трогать!! Теги, не имеющие закрывающих. В режиме XML этот список не учитывается.
 define('HTML_ELEMENTS_VOID', ['!doctype', '?xml', 'area', 'base', 'basefont', 'bgsound', 'br', 'col', 'command', 'embed', 'frame', 'hr', 'img', 'input', 'isindex', 'keygen', 'link', 'meta', 'nextid', 'param', 'source', 'track', 'wbr', ]);
-// элементы, которые категорически нельзя располагать внутри элементов такого же типа. Т.е. предыдущий элемент такого же типа должен быть прерван. Проверено на последней версии blink + HTML5.
+// !!Не трогать!! Элементы, которые нельзя располагать внутри элементов такого же типа. Т.е. DOM-парсеру предписывается при встрече такого элемента закрыть предыдущий элемент такого же типа. Проверено на последней версии blink + HTML5.
 define('HTML_ELEMENTS_NON_NESTED', ['a', 'body', 'button', 'dd', 'dt', 'form', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'head', 'html', 'iframe', 'select', 'li', 'nobr', 'noembed', 'noframes', 'noscript', 'optgroup', 'option', 'p', 'script', 'style', 'textarea', 'title', 'xmp', ]);
-// элементы, которые категорически нельзя располагать внутри параграфа. Т.е. параграф должен будет прерваться. Проверено на последней версии blink + HTML5.
+// !!Не трогать!! Элементы, которые нельзя располагать внутри параграфа. Т.е. DOM-парсеру предписывается при встрече такого элемента закрыть открытый параграф. Проверено на последней версии blink + HTML5.
 define('HTML_ELEMENTS_NON_PARAGRAPH', ['address', 'article', 'aside', 'blockquote', 'center', 'dd', 'details', 'dialog', 'dir', 'div', 'dl', 'dt', 'fieldset', 'figcaption', 'figure', 'footer', 'form', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'header', 'hgroup', 'hr', 'li', 'main', 'menu', 'nav', 'ol', 'p', 'plaintext', 'pre', 'section', 'summary', 'table', 'ul', 'xmp', ]);
-// элементы, которые категорически нельзя располагать внутри заголовков (h1-h6). Т.е. заголовок должен будет прерваться. Проверено на последней версии blink + HTML5.
+// !!Не трогать!! Элементы, которые нельзя располагать внутри заголовков (h1-h6). Т.е. DOM-парсеру предписывается при встрече такого элемента закрыть открытый заголовок. Проверено на последней версии blink + HTML5.
 define('HTML_ELEMENTS_NON_HEADER', ['body', 'caption', 'col', 'colgroup', 'frame', 'frameset', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'head', 'html', 'tbody', 'td', 'tfoot', 'th', 'thead', 'tr', ]);
-// используются здешним парсером: теги, которые будучи открытыми не воспринимают других тегов, в том числе комментарии. В режиме XML этот список не учитывается.
+// !!Не трогать!! Теги, которые будучи открытыми не воспринимают других тегов, в том числе комментарии. В режиме XML этот список не учитывается.
 define('HTML_ELEMENTS_SPECIAL', ['script', 'style']);
 
 
@@ -90,13 +89,13 @@ define('HTML_ELEMENTS_SPECIAL', ['script', 'style']);
 class html {
 	
 	// свойства закомментированы ради уменьшения расхода памяти.
-	// тем не менее, они могут присутствовать когда это необходимо и здесь даны описания для них.
+	// тем не менее, они могут присутствовать, когда это необходимо. Здесь даны описания для них.
 	
 	// public $tag;				// тип тега (например, 'div'). Всегда в нижнем регистре. Текстовый узел - '#text', комментарий - '#comment', корневой - NULL.
-	// public $tag_block;		// открывашка от тега, например '<a href="http://..." someattr="123">'. Для узлов типа '#text' и '#comment' в этом поле хранится сам текст (либо HTML-комментарий целиком).
-	// public $closer;			// закрывашка от тега, например '</a>'. Может быть пустым, когда закрывашка отсутствует (по тем или иным причинам).
-	// public $parent;			// ссылка на родительский узел. Для корневого - NULL.
-	// public $offset;			// числовое строковое смещение до тега в получившемся документе. Запоняется при вызове calc_offsets().
+	// public $tag_block;		// открывашка от тега, например '<a href="http://..." someattr="123">'. Для узлов типа '#text' и '#comment' в этом поле хранится сам текст (либо HTML-комментарий целиком). У корневого узла здесь NULL.
+	// public $closer;			// закрывашка от тега, например '</a>'. Может быть пустым, когда закрывашка отсутствует (по тем или иным причинам). У корневого узла здесь NULL.
+	// public $parent;			// ссылка на родительский узел. У корневого - NULL.
+	// public $offset;			// числовое строковое смещение до тега в получившемся документе. Заполняется при вызове calc_offsets().
 	public $children = [];		// массив вложенных узлов. Может быть пустым.
 	
 	public function __clone()
@@ -755,26 +754,6 @@ class html {
 		$this->invalidate();
 	}
 	
-	/*	Оставить внутри текущего элемента теги только заданных типов.
-			$tags - массив имен тегов, например: ['table', 'tr', 'td']
-	*/
-	public function tag_filter($tags)
-	{
-		$qkey = 0;
-		$queue = array_values($this->children);
-		while ($e = $queue[$qkey++])
-		{
-			if ($e->tag{0}!='#' && !in_array($e->tag, $tags))
-			{
-				$e->remove();
-				continue;
-			}
-			foreach ($e->children as $ee)
-			{$queue[] = $ee;}
-		}
-		$this->invalidate();
-	}
-	
 	// удалить специальные теги ('script', 'style', 'noscript', 'noframes', 'noembed') среди потомков текущего элемента.
 	public function remove_specials()
 	{
@@ -812,15 +791,6 @@ class html {
 			foreach ($e->children as $ee)
 			{$queue[] = $ee;}
 		}
-	}
-	
-	// получить список детей ($this->children) текущего узла исключая текстовые
-	public function children_notext()
-	{
-		$res = [];
-		foreach ($this->children as $v)
-		{if ($v->tag!=='#text') $res[] = $v;}
-		return $res;
 	}
 	
 	/*	Подсчитать и заполнить параметр $offset у текущего узла и всех вложенных узлов.
@@ -882,15 +852,7 @@ class html {
 							Если передать 0, то обработка полностью прекратится.
 							Значения больше $ctrl['level'], либо ниже 0 передавать бессмысленно.
 							Если занести NULL - выскакивания не будет (так по-умолчанию).
-						'stack' - (массив) (только для чтения) стек родителей ("стек обработки"). По сути это список родителей текущего обрабатываемого узла, начиная от самого дальнего (!) родителя (т.е. от базового узла) и заканчивая самым ближним родителем. Каждый элемент массива имеет вид: 
-						
-							['iter'=>массив_узлов, 'node'=>узел, ]
-							
-							, где:
-								'node' - очередной родитель
-								'iter' - не трогаем, это итератор
-								
-							Для различных проверок стека удобны функции с префиксом stack_*, такие как html::stack_have().
+						'stack' - (массив) (только для чтения) стек родителей. По сути это список родителей текущего обрабатываемого узла, начиная от самого дальнего (!) родителя (т.е. от базового узла) и заканчивая самым ближним родителем. Для различных проверок стека удобны функции с префиксом stack_*, такие как html::stack_have().
 			
 			Если колбек вернет TRUE, то обход будет немедленно полностью прекращен. При этом возвращенное колбеком значение будет передано как результат вызова функции.
 		
@@ -911,11 +873,11 @@ class html {
 			}
 	*/
 	public function iterate($callback)
-	{$this->iterate_recurs($this, false, $callback);}
-	
-	// тоже самое что iterate(), но обход задом наперед (начиная с конца).
-	public function iterate_reverse($callback)
-	{$this->iterate_recurs($this, true, $callback);}
+	{
+		$stack = [$this, ];
+		$rewind = NULL;
+		$this->iterate_recurs($stack, $rewind, $callback);
+	}
 	
 	/*	Функция предназначена для вызова изнутри колбека iterate().
 		Позволяет проверить, нет ли среди родителей текущего узла тегов заданного типа.
@@ -927,7 +889,7 @@ class html {
 	static public function stack_have($tags, $c)
 	{
 		foreach ($c['stack'] as $v)
-		{if (in_array($v['node']->tag, $tags)) return $v['node'];}
+		{if (in_array($v->tag, $tags)) return $v;}
 	}
 	
 	/*	Получить список родителей текущего узла, начиная от самого близкого и вверх, исключая корневой.
@@ -1028,7 +990,6 @@ class html {
 	
 	/*	Удалить текущий узел.
 		В случае корневого узла это очистит его содержимое.
-		
 		Удаляет текущий элемент из списка детей у родителя текущего элемента.
 		(!) Текущий узел становится открепленным.
 	*/
@@ -1172,7 +1133,8 @@ class html {
 		}
 	}
 	
-	/*	"Всплыть" узел. Текущий узел закроет все теги, внутри которых расположен и откроет их заново (через создание новых узлов), встав между двумя возникшими частями.
+	/*	"Всплыть" узел пузырьком. 
+		Текущий узел закроет все теги, внутри которых расположен и откроет их заново (через создание новых узлов), встав между двумя возникшими частями.
 		Т.е. текущий узел будет среди детей корневого узла.
 		Если узел уже находится среди детей корневого узла (либо является корневым), то никаких операций выполнено не будет.
 		Если в результате деления на границах возникнут пустые теги, то они будут удалены.
@@ -1297,7 +1259,12 @@ class html {
 		{
 			if (isset($this->c_inner))
 			{return $this->c_inner;}
-			return ($this->c_inner = $this->get(true));
+			// рекурсией выходи на 30-40% быстрее, чем если от нее избавиться
+			if (!$this->parent || $this->tag{0}!='#')
+			{$this->c_inner = html::render($this->children);}
+				else
+			{$this->c_inner = html::render($this);}
+			return $this->c_inner;
 		}
 			else
 		{$this->set($html, true);}
@@ -1313,29 +1280,40 @@ class html {
 		{
 			if (isset($this->c_outer))
 			{return $this->c_outer;}
-			return ($this->c_outer = $this->get(false));
+			// рекурсией выходи на 30-40% быстрее, чем если от нее избавиться
+			if (!$this->parent)
+			{$this->c_outer = html::render($this->children);}
+				else
+			{$this->c_outer = html::render($this);}
+			return $this->c_outer;
 		}
 			else
 		{$this->set($html, false);}
 	}
 	
-	/*	Получить outerHTML для списка разрозненных/сторонних узлов.
-			$nodes - массив узлов
+	/*	Получить outerHTML для любого массива узлов или конкретного узла.
+		Узлы могут быть в т.ч. из разных документов.
+			$nodes - массив узлов либо отдельный узел
 		Возвращает строку.
 		Функция статическая - может быть вызвана без создания класса.
 	*/
 	static public function render($nodes)
 	{
-		if (!is_array($nodes)) $nodes = [$nodes, ];
-		$res = '';
-		foreach ($nodes as $elem)
-		{html::get_content($elem, $res);}
-		return $res;
+		$res = [];
+		if (is_object($nodes))
+		{$res[] = $nodes->tag_block . html::render($nodes->children) . $nodes->closer;}
+			else
+		{
+			// с рекурсией очень быстро работает, не нужно от нее избавляться
+			foreach ($nodes as $elem)
+			{$res[] = $elem->tag_block . html::render($elem->children) . $elem->closer;}
+		}
+		return implode($res);
 	}
 	
 	/*	Упаковать список узлов в общий (корневой) тег.
 			$nodes - массив узлов
-		Вернет объект узла.
+		Вернет узел (т.е. новый документ).
 	*/
 	static public function pack($nodes)
 	{
@@ -1382,9 +1360,9 @@ class html {
 	{
 		if (isset($this->c_strip))
 		{return $this->c_strip;}
-		$res = '';
+		$res = [];
 		$this->get_stripped_content($this, $res);
-		return ($this->c_strip = trim(strip_tags($res))); // strip_tags() всё равно нужен
+		return ($this->c_strip = trim(strip_tags(implode($res)))); // strip_tags() всё равно нужен
 	}
 	
 	/*	Изменить тип тега.
@@ -1407,32 +1385,6 @@ class html {
 		while ($c->tag!==NULL);
 		return $c;
 	}
-		
-	/*	Получить соседа слева от текущего.
-		Вернет NULL если соседа нет.
-		Операция медленная.
-	*/
-	public function prev_sibling()
-	{
-		foreach ($this->parent->children as $c)
-		{
-			if ($c===$this) return $prev;
-			$prev = $c;
-		}
-	}
-	
-	/*	Получить соседа справа от текущего.
-		Вернет NULL если соседа нет.
-		Операция медленная.
-	*/
-	public function next_sibling()
-	{
-		foreach ($this->parent->children as $c)
-		{
-			if ($found) return $c;
-			if ($c===$this) $found = true;
-		}
-	}
 	
 	/*	Найти узлы, находящиеся между двумя узлами, при условии что оба узла имеют общего прямого родителя и расположены в прямом порядке.
 		Вернет массив узлов. Если условие не соблюдено, либо узлов нет, то массив будет пустым.
@@ -1442,11 +1394,11 @@ class html {
 		$res = [];
 		foreach ($node1->parent->children as $c)
 		{
-			if ($c===$node2) break;
+			if ($c===$node2) return $res;
 			if ($start) $res[] = $c;
 			if ($c===$node1) $start = true;
 		}
-		return $res;
+		return [];
 	}
 	
 	/*	Найти отличия между 2 узлами.
@@ -1480,8 +1432,6 @@ class html {
 		list($arr1, $arr2) = $z;
 		if (count($arr1)!=count($arr2))
 		{
-			// if ($from_second_too && !$arr1)
-			// {$arr1 = $arr2;}
 			if ($arr1)
 			{
 				$x = reset($arr1);
@@ -1638,7 +1588,8 @@ class html {
 		
 		Результаты:
 	
-			- очень чистые статьи в удобно отформатированном виде
+			- очень чистые статьи в удобно отформатированном виде, не требуют дополнительной чистки в 99% случаев
+			- комментарии к статье не смешаны со статьей в 99% случаев
 			- может парсить статьи и отдельно комменты, или и то и другое
 			- может рипать шаблон (заменять статейный контейнер произвольным контентом)
 		
@@ -1660,11 +1611,11 @@ class html {
 				yyy - сумма параграфных баллов
 			$grps - список массивов dom узлов.
 				Каждый из таких массивов это т.н. список "параграфов". Т.е. если взять его родителя, то получим "контейнер параграфов".
-				Первый массив как правило является статьей, второй - комментариями пользователей, третий и последующие - бесполезным мусором.
+				Первый массив ($grps[0]) как правило является статьей, второй ($grps[1]) - комментариями пользователей, третий и последующие - бесполезным мусором.
 				В очень редких случаях (~1%) возможна перемена мест между первыми двумя группами.
 				Если взять первый узел (т.е. $grps[0][0]), в нем содержится поле $par_digest. Это строка, в ней через запятую перечислены теги, которые были в роли параграфов. Эту строку можно разбить по запятым и передать в html::article_filter() в качестве 'par_tags'.
 		При неудаче вернет NULL, либо $grps будет пуст.
-		Каждую полученную группу ($grps[0], $grps[1], ...) можно (нужно!) дополнительно обработать (см. html::article_filter()), т.к. они сырые и представляют из себя почти нетронутые участки оригинального документа, содержащие соответствующий контент.
+		Каждую полученную группу ($grps[0], $grps[1], ...) нужно дополнительно обработать (см. html::article_filter()), т.к. там сырые узлы и они представляют из себя почти нетронутые участки оригинального документа, содержащие соответствующий контент. Т.е. делаем html::render() и передаем результат в html::article_filter().
 	*/
 	public function context_groups($preserve_tags = false, $allow_noscript = false)
 	{
@@ -1788,8 +1739,9 @@ class html {
 			$pr = $node->parents();
 			for ($j=0;$j<$k;$j++)
 			{
-				if (($in1 = in_array($arr[$j], $pr, true)) || 
-					($in2 = in_array($node, $arr[$j]->parents(), true))
+				$aj = $arr[$j];
+				if (($in1 = in_array($aj, $pr, true)) || 
+					($in2 = in_array($node, $aj->parents(), true))
 				)
 				{continue 2;}
 			}
@@ -1929,6 +1881,7 @@ class html {
 		extract($params);
 		if ($remove_p_if_not_punct===NULL) $remove_p_if_not_punct = true;
 		if ($allow_p_in_tables===NULL) $allow_p_in_tables = true;
+		$start = time();
 		/*
 			[ok] заранее делаем это: 
 				- наиболее классические phrase-теги заменяем на span.
@@ -1974,6 +1927,9 @@ class html {
 			[ok] если в самом конце статьи заголовок, то удаляем его.
 			[ok] после завершающих тегов </h1>, </h2>, </h3>, </p>, </ul>, </li>, </blockquote>, </table>, </thead>, </tbody>, </tfoot>, </tr>, </td>  ставится перенос строки.
 			[ok] удаляем параграфы, текст которых повторяется 2 и более раз в рамках статьи
+			
+			(...)
+			здесь перечислен не полный список из того, что реально делается.
 			
 		*/
 		
@@ -2296,6 +2252,8 @@ class html {
 				}
 			});
 			
+			if ((time()-$start) > 10) return new html();
+			
 			// если какая-то картинка повторилась несколько раз, то ее удаляем
 			foreach ($src_stats as $v)
 			{
@@ -2615,6 +2573,8 @@ class html {
 					$total2++;
 				}
 				
+				if ((time()-$start) > 10) return new html();
+				
 			} while ($total2);
 			$total += $total2;
 		} while ($total > 0);
@@ -2684,23 +2644,10 @@ class html {
 		} while (true);
 	}
 	
-	protected static function get_content($tag, &$res)
-	{
-		$res .= $tag->tag_block;
-		
-		
-		if (!is_array($tag->children))
-		debug_print_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS);
-		
-		foreach ($tag->children as $tag2)
-		{html::get_content($tag2, $res);}
-		$res .= $tag->closer;
-	}
-	
 	protected static function get_stripped_content($tag, &$res)
 	{
 		if ($tag->tag==='#text')
-		{$res .= $tag->tag_block;}
+		{$res[] = $tag->tag_block;}
 			else
 		{
 			foreach ($tag->children as $tag2)
@@ -2708,25 +2655,12 @@ class html {
 		}
 	}
 	
-	protected function get($only_inner = true)
-	{
-		$res = '';
-		if (!$this->parent || ($only_inner && $this->tag{0}!='#'))
-		{
-			foreach ($this->children as $elem)
-			{$this->get_content($elem, $res);}
-		}
-			else
-		{$this->get_content($this, $res);}
-		return $res;
-	}
-	
 	protected function set($html, $only_inner = true)
 	{
 		// вырожденная ситуация: когда корневому ставят пустой контент, то нужно добавить хотя бы один пустой текстовый узел
 		if ($this->tag===NULL && ((string)$html)==='')
 		{
-			$x_obj = $this->new_tag();
+			$x_obj = new html();
 			$x_obj->tag = '#text';
 			$x_obj->tag_block = '';
 			$x_obj->parent = $this;
@@ -2768,7 +2702,7 @@ class html {
 			elseif ($tag_block=='<!--')
 			{
 				$this->try_add_text_node($html, $last_opened_or_closed_tag_offset, $offset, $curr_parent);
-				$comment = $this->new_tag();
+				$comment = new html();
 				$comment->tag = '#comment';
 				$comment_started_at = $offset;
 				$comment->parent = $curr_parent;
@@ -2884,7 +2818,7 @@ class html {
 					}
 				}
 				
-				$obj = $this->new_tag();
+				$obj = new html();
 				$obj->tag = $name;
 				$obj->tag_block = $tag_block;
 				$obj->parent = $curr_parent;
@@ -2934,7 +2868,7 @@ class html {
 				// закрылся не открывавшийся тег - делаем текстовым узлом
 				if (!$found)
 				{
-					$x_obj = $this->new_tag();
+					$x_obj = new html();
 					$x_obj->tag = '#text';
 					$x_obj->tag_block = $tag_block;
 					$x_obj->parent = $curr_parent;
@@ -2962,62 +2896,77 @@ class html {
 		$offset += strlen($tag->closer);
 		$res .= $tag->closer;
 	}
-		
-	protected function iterate_recurs($node, $reverse, $callback)
-	{
-		$stack = [['node' => $node, ], ];
-		while ($stack)
-		{
-			$level = count($stack)-1;
-			$cur = &$stack[$level];
-			if (!is_array($cur['iter']))
-			{
-				$cur['iter'] = $cur['node']->children;
-				if ($reverse)
-				{$cur['iter'] = array_reverse($cur['iter']);}
-					else
-				{reset($cur['iter']);}
-			}
-			if ($node = current($cur['iter']))
-			{
-				$c = ['level'=>$level, 'stack'=>&$stack, ];
-				if ($res = ($callback)($node, $c))
-				{return $res;}
-				if (is_int($cl = $c['continue_level']))
-				{
-					$stack = array_slice($stack, 0, max(0, min($cl, $level)));
-					continue;
-				}
-				if (is_int($rl = $c['rewind_level']))
-				{
-					if ($rl < $level)
-					{
-						unset($cur);
-						$rl = max(0, $rl);
-						$stack = array_slice($stack, 0, $rl+1);
-					}
-					$stack[count($stack)-1]['iter'] = NULL;
-					continue;
-				}
-				if (!$c['skip'])
-				{$stack[] = ['node' => $node, ];}
-				next($cur['iter']);
-			}
-				else
-			{array_pop($stack);}
-		}
-	}
 	
-	protected function new_tag()
+	protected function iterate_recurs(&$stack, &$rewind, $callback)
 	{
-		$c = get_class($this);
-		return new $c();
+		// с использованием рекурсии работает на 20% быстрее, чем если от нее избавиться
+		$level = count($stack)-1;
+		do {
+			if (is_int($rewind) && $rewind < $level && $level > 0) return;
+			foreach ($this->children as $child)
+			{
+				// $stack - это родители текущего элемента ($child) без него самого
+				$c = ['level'=>$level, 'stack'=>&$stack, ];
+				$res = $callback($child, $c);
+				if ($res) return true;
+				$rewind = $c['rewind_level'];
+				if (is_int($rewind)) continue 2;
+				$stack[] = $child;
+				if (!$c['skip'] && $child->iterate_recurs($stack, $rewind, $callback))
+				{return true;}
+				array_pop($stack);
+			}
+			break;
+		} while (true);
 	}
+		
+	// protected function iterate_recurs_old($node, $callback)
+	// {
+		// без рекурсии работает медленнее! (как ни странно)
+		// $stack = [['node' => $node, ], ];
+		// while ($stack)
+		// {
+			// $level = count($stack)-1;
+			// $cur = &$stack[$level];
+			// if (!is_array($cur['iter']))
+			// {
+				// $cur['iter'] = $cur['node']->children;
+				// reset($cur['iter']);
+			// }
+			// if ($node = current($cur['iter']))
+			// {
+				// $c = ['level'=>$level, 'stack'=>&$stack, ];
+				// if ($res = ($callback)($node, $c))
+				// {return $res;}
+				// if (is_int($cl = $c['continue_level']))
+				// {
+					// $stack = array_slice($stack, 0, max(0, min($cl, $level)));
+					// continue;
+				// }
+				// if (is_int($rl = $c['rewind_level']))
+				// {
+					// if ($rl < $level)
+					// {
+						// unset($cur);
+						// $rl = max(0, $rl);
+						// $stack = array_slice($stack, 0, $rl+1);
+					// }
+					// $stack[count($stack)-1]['iter'] = NULL;
+					// continue;
+				// }
+				// if (!$c['skip'])
+				// {$stack[] = ['node' => $node, ];}
+				// next($cur['iter']);
+			// }
+				// else
+			// {array_pop($stack);}
+		// }
+	// }
 	
 	protected function try_add_text_node($html, $prev_offset, $offset, $curr_parent)
 	{
 		if ($offset-$prev_offset <= 0) return;
-		$t_obj = $this->new_tag();
+		$t_obj = new html();
 		$t_obj->tag = '#text';
 		$t_obj->tag_block = substr($html, $prev_offset, $offset-$prev_offset);
 		$t_obj->parent = $curr_parent;
