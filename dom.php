@@ -44,7 +44,7 @@
 // списки HTML-элементов, разделенные на группы.
 
 // все элементы: cобраны все теги всех стандартов вплоть до HTML5 включительно, а также устаревшие и (почти все) нестандартные теги
-define('HTML_ELEMENTS_ALL', ['a', 'abbr', 'acronym', 'address', 'applet', 'area', 'article', 'aside', 'audio', 'b', 'base', 'basefont', 'bdi', 'bdo', 'bgsound', 'big', 'blink', 'blockquote', 'body', 'br', 'button', 'canvas', 'caption', 'center', 'cite', 'code', 'col', 'colgroup', 'command', 'data', 'datalist', 'dd', 'del', 'details', 'dfn', 'dialog', 'dir', 'div', 'dl', 'dt', 'em', 'embed', 'fieldset', 'figcaption', 'figure', 'font', 'footer', 'form', 'frame', 'frameset', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'head', 'header', 'hgroup', 'hr', 'html', 'i', 'iframe', 'img', 'input', 'ins', 'isindex', 'kbd', 'keygen', 'label', 'legend', 'li', 'link', 'main', 'map', 'mark', 'marquee', 'menu', 'menuitem', 'meta', 'meter', 'nav', 'nobr', 'noembed', 'noframes', 'noscript', 'object', 'ol', 'optgroup', 'option', 'output', 'p', 'param', 'picture', 'plaintext', 'pre', 'progress', 'q', 'rp', 'rt', 'ruby', 's', 'samp', 'script', 'section', 'select', 'small', 'source', 'span', 'strike', 'strong', 'style', 'sub', 'summary', 'sup', 'table', 'tbody', 'td', 'textarea', 'tfoot', 'th', 'thead', 'time', 'title', 'tr', 'track', 'tt', 'u', 'ul', 'var', 'video', 'wbr', 'xmp', ]);
+define('HTML_ELEMENTS_ALL', ['a', 'abbr', 'acronym', 'address', 'applet', 'area', 'article', 'aside', 'audio', 'b', 'base', 'basefont', 'bdi', 'bdo', 'bgsound', 'big', 'blink', 'blockquote', 'body', 'br', 'button', 'canvas', 'caption', 'center', 'cite', 'code', 'col', 'colgroup', 'command', 'data', 'datalist', 'dd', 'del', 'details', 'dfn', 'dialog', 'dir', 'div', 'dl', 'dt', 'em', 'embed', 'fieldset', 'figcaption', 'figure', 'font', 'footer', 'form', 'frame', 'frameset', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'head', 'header', 'hgroup', 'hr', 'html', 'i', 'iframe', 'img', 'input', 'ins', 'isindex', 'kbd', 'keygen', 'label', 'legend', 'li', 'link', 'main', 'map', 'mark', 'marquee', 'menu', 'menuitem', 'meta', 'meter', 'nav', 'nobr', 'noembed', 'noframes', 'noscript', 'object', 'ol', 'optgroup', 'option', 'output', 'p', 'param', 'picture', 'plaintext', 'pre', 'progress', 'q', 'rp', 'rt', 'ruby', 's', 'samp', 'noindex', 'script', 'section', 'select', 'small', 'source', 'span', 'strike', 'strong', 'style', 'sub', 'summary', 'sup', 'table', 'tbody', 'td', 'textarea', 'tfoot', 'th', 'thead', 'time', 'title', 'tr', 'track', 'tt', 'u', 'ul', 'var', 'video', 'wbr', 'xmp', ]);
 // блочные элементы
 define('HTML_ELEMENTS_BLOCK', ['address', 'article', 'aside', 'blockquote', 'center', 'dd', 'details', 'dir', 'div', 'dl', 'dt', 'embed', 'fieldset', 'figcaption', 'figure', 'footer', 'form', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'header', 'hgroup', 'hr', 'isindex', 'li', 'main', 'marquee', 'nav', 'ol', 'p', 'pre', 'rt', 'section', 'summary', 'table', 'tbody', 'td', 'tfoot', 'th', 'thead', 'tr', 'ul', 'xmp', ]);
 // строчные элементы
@@ -76,7 +76,7 @@ define('HTML_ELEMENTS_HTML5', ['article', 'aside', 'bdi', 'details', 'dialog', '
 // !!Не трогать!! Теги, не имеющие закрывающих. В режиме XML этот список не учитывается.
 define('HTML_ELEMENTS_VOID', ['!doctype', '?xml', 'area', 'base', 'basefont', 'bgsound', 'br', 'col', 'command', 'embed', 'frame', 'hr', 'img', 'input', 'isindex', 'keygen', 'link', 'meta', 'nextid', 'param', 'source', 'track', 'wbr', ]);
 // !!Не трогать!! Элементы, которые нельзя располагать внутри элементов такого же типа. Т.е. DOM-парсеру предписывается при встрече такого элемента закрыть предыдущий элемент такого же типа. Проверено на последней версии blink + HTML5.
-define('HTML_ELEMENTS_NON_NESTED', ['a', 'body', 'button', 'dd', 'dt', 'form', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'head', 'html', 'iframe', 'select', 'li', 'nobr', 'noembed', 'noframes', 'noscript', 'optgroup', 'option', 'p', 'script', 'style', 'textarea', 'title', 'xmp', ]);
+define('HTML_ELEMENTS_NON_NESTED', ['a', 'body', 'button', 'dd', 'dt', 'form', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'head', 'html', 'iframe', 'select', 'li', 'nobr', 'noembed', 'noframes', 'noindex', 'noscript', 'optgroup', 'option', 'p', 'script', 'style', 'textarea', 'title', 'xmp', ]);
 // !!Не трогать!! Элементы, которые нельзя располагать внутри параграфа. Т.е. DOM-парсеру предписывается при встрече такого элемента закрыть открытый параграф. Проверено на последней версии blink + HTML5.
 define('HTML_ELEMENTS_NON_PARAGRAPH', ['address', 'article', 'aside', 'blockquote', 'center', 'dd', 'details', 'dialog', 'dir', 'div', 'dl', 'dt', 'fieldset', 'figcaption', 'figure', 'footer', 'form', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'header', 'hgroup', 'hr', 'li', 'main', 'menu', 'nav', 'ol', 'p', 'plaintext', 'pre', 'section', 'summary', 'table', 'ul', 'xmp', ]);
 // !!Не трогать!! Элементы, которые нельзя располагать внутри заголовков (h1-h6). Т.е. DOM-парсеру предписывается при встрече такого элемента закрыть открытый заголовок. Проверено на последней версии blink + HTML5.
@@ -125,8 +125,14 @@ class html {
 			:rnotcontains("#регулярка#") - проверка на НЕсовпадение с регуляркой (проверяется outerHTML)
 			:ricontains("#регулярка#") - проверка на совпадение с регуляркой (проверяется innerHMTL)
 			:rinotcontains("#регулярка#") - проверка на НЕсовпадение с регуляркой (проверяется innerHMTL)
+			:ritcontains("#регулярка#") - проверка на совпадение с регуляркой (проверяется innerText, т.е. используется strip_tags() от innerHTML)
+			:ritnotcontains("#регулярка#") - проверка на НЕсовпадение с регуляркой (проверяется innerText, т.е. используется strip_tags() от innerHTML)
 			:rtbcontains("#регулярка#") - проверка на совпадение с регуляркой (проверяется только открывашка от тега, исключая содержимое тега)
 			:rtbnotcontains("#регулярка#") - проверка на НЕсовпадение с регуляркой (проверяется только открывашка от тега, исключая содержимое тега)
+			:ritbcontains("#регулярка#") - проверка на совпадение с регуляркой (проверяется виртуальная суммарная строчка открывающих тегов элементов innerHTML)
+			:ritbnotcontains("#регулярка#") - проверка на НЕсовпадение с регуляркой (проверяется виртуальная суммарная строчка открывающих тегов элементов innerHTML)
+			:rptbcontains("#регулярка#") - проверка на совпадение с регуляркой (проверяется виртуальная суммарная строчка открывающих тегов родительских элементов, в порядке подъема вверх, исключая тег самого элемента)
+			:rptbnotcontains("#регулярка#") - проверка на НЕсовпадение с регуляркой (проверяется виртуальная суммарная строчка открывающих тегов родительских элементов, в порядке подъема вверх, исключая тег самого элемента)
 			:header - собрать все заголовки (h1, h2, h3, ...)
 			:hidden - собирает элементы, имеющие в атрибуте "style" текст "display:none" либо "visibility:hidden" (ищет по регулярке, регистронезависимо)
 			:first - взять первый элемент среди найденных
@@ -164,6 +170,8 @@ class html {
 				:not(span)
 				:not(.fancy)
 				:not(.crazy, .fancy)
+				
+			- при использовании регулярок некоторые символы внутри регулярки могут мешать разбору всего селектора (возникает PHP-ошибка). В таких случаях используйте HEX-нотацию для необходимых символов (\xAB например). Наиболее очевидным таким символом является ":" (двоеточие). Но в случае двоеточия достаточно перед ним добавить бэкслеш ("\:") и сработает как надо. HEX-нотация же пригодится для разного рода скобок (круглых, квадратных) и возможно каких-то еще символов.
 			
 		Параметры:
 		
@@ -181,10 +189,10 @@ class html {
 		// + опц. псевдоклассы во всех случаях, + опц. атрибут во всех случаях
 		$nth = '\(\s*(?:[\d\-\+n]+|odd|even)\s*\)';
 		if ($allow_extensions)
-		{$ext = '|odd|even|hidden|header|first|last|(?:eq|lt|gt)\(\s*\-?\d+\s*\)|(?:contains|notcontains|icontains|inotcontains|rcontains|rnotcontains|ricontains|rinotcontains|rtbcontains|rtbnotcontains)\((?:"[^"]+"|\'[^\']+\'|[^\)]+)\)';}
+		{$ext = '|odd|even|hidden|header|first|last|(?:eq|lt|gt)\(\s*\-?\d+\s*\)|(?:contains|notcontains|icontains|inotcontains|rcontains|rnotcontains|ricontains|ritcontains|rinotcontains|ritnotcontains|rtbcontains|rtbnotcontains|ritbcontains|ritbnotcontains|rptbcontains|rptbnotcontains)\((?:"[^"]+"|\'[^\']+\'|[^\)]+)\)';}
 		$gr = '(?P<tag>(?:@?[\w\-]*|\*)(?:[#\.@][\w\-]+)*)'.
 			'(?P<attrs>(?:\[.*?\])*)'.
-			'(?P<pseudo>(?:\s*(?::(?:active|checked|disabled|empty|enabled|first-child|first-of-type|last-of-type|focus|hover|in-range|invalid|last-child|link|not(?:-parent)?\([\w\-#\.,\s]+\)|only-child|target|valid|visited|root|read-write|lang\([\w\-]+\)|read-only|optional|out-of-range|only-of-type'.$ext.'|nth-of-type'.$nth.'|nth-last-of-type'.$nth.'|nth-last-child'.$nth.'|nth-child'.$nth.')|::(?:after|before|first-letter|first-line|selection)))*)';
+			'(?P<pseudo>(?:\s*(?:(?<!\\\\):(?:active|checked|disabled|empty|enabled|first-child|first-of-type|last-of-type|focus|hover|in-range|invalid|last-child|link|not(?:-parent)?\([\w\-#\.,\s]+\)|only-child|target|valid|visited|root|read-write|lang\([\w\-]+\)|read-only|optional|out-of-range|only-of-type'.$ext.'|nth-of-type'.$nth.'|nth-last-of-type'.$nth.'|nth-last-child'.$nth.'|nth-child'.$nth.')|(?<!\\\\)::(?:after|before|first-letter|first-line|selection)))*)';
 		$off = 0;
 		$buf = []; // текущая собираемая группа
 		$list = []; // список групп, которые нужно найти
@@ -258,7 +266,7 @@ class html {
 				{
 					foreach ($m2[0] as $v)
 					{
-						switch ($v{0})
+						switch ($v[0])
 						{
 							case '#':
 								$req['id'] = substr($v, 1);
@@ -270,7 +278,7 @@ class html {
 							case '@':
 								if ($v=='@text' || $v=='@comment')
 								{
-									$v{0} = '#';
+									$v[0] = '#';
 									$req['texcom'] = $v;
 								}
 								elseif (preg_match('#^@attr_([\w\-]+)$#', $v, $m3))
@@ -284,7 +292,7 @@ class html {
 				}
 				if ($xv['pseudo'])
 				{
-					foreach (preg_split('#::?#', $xv['pseudo']) as $v)
+					foreach (preg_split('#(?<!\\\\)::?#', $xv['pseudo']) as $v)
 					{$req['pseudos'][] = trim($v);}
 					$req['pseudos'] = array_filter($req['pseudos']);
 				}
@@ -315,7 +323,7 @@ class html {
 							if ($e->tag!==NULL)
 							{
 								if ($req['tag'] && $e->tag!=$req['tag']) continue;
-								if (!$req['texcom'] && $e->tag{0}=='#') continue;
+								if (!$req['texcom'] && $e->tag[0]=='#') continue;
 								if ($req['texcom'] && $e->tag!=$req['texcom']) continue;
 								$a = $e->attrs();
 								if ($req['id']!==NULL && $a['id']!==$req['id']) continue;
@@ -378,7 +386,7 @@ class html {
 											if ($p=='last-child') $z = array_reverse($z);
 											foreach ($z as $cc)
 											{
-												if ($cc->tag{0}!='#') 
+												if ($cc->tag[0]!='#') 
 												{
 													if ($cc === $e)
 													{break(2);}
@@ -437,11 +445,43 @@ class html {
 										case 'rinotcontains':
 											$conti2 = (bool)preg_match($ps, $e->inner());
 										break;
+										case 'ritcontains':
+											$qwe = [];
+											html::render_texts($e->children, $qwe);
+											$conti2 = !preg_match($ps, implode($qwe));
+											unset($qwe);
+										break;
+										case 'ritnotcontains':
+											$qwe = [];
+											html::render_texts($e->children, $qwe);
+											$conti2 = (bool)preg_match($ps, implode($qwe));
+											unset($qwe);
+										break;
 										case 'rtbcontains':
-											$conti2 = !preg_match($ps, $e->tag_block);
+											$conti2 = !(!in_array($e->tag, ['#text', '#comment']) && preg_match($ps, $e->tag_block));
 										break;
 										case 'rtbnotcontains':
-											$conti2 = (bool)preg_match($ps, $e->tag_block);
+											$conti2 = (!in_array($e->tag, ['#text', '#comment']) && preg_match($ps, $e->tag_block));
+										break;
+										case 'ritbcontains':
+											$qwe = [];
+											html::render_tag_blocks($e->children, $qwe);
+											$qwe = implode($qwe);
+											$conti2 = !preg_match($ps, $qwe);
+											unset($qwe);
+										break;
+										case 'ritbnotcontains':
+											$qwe = [];
+											html::render_tag_blocks($e->children, $qwe);
+											$qwe = implode($qwe);
+											$conti2 = preg_match($ps, $qwe);
+											unset($qwe);
+										break;
+										case 'rptbcontains':
+											$conti2 = !preg_match($ps, implode($e->parent_tag_blocks()));
+										break;
+										case 'rptbnotcontains':
+											$conti2 = (bool)preg_match($ps, implode($e->parent_tag_blocks()));
 										break;
 										case 'first': $need['first'] = true; break;
 										case 'last': $need['last'] = true; break;
@@ -473,7 +513,7 @@ class html {
 											if ($p=='last-of-type') $z = array_reverse($z);
 											foreach ($z as $cc)
 											{
-												if ($cc->tag{0}=='#' || $cc->tag != $e->tag) continue;
+												if ($cc->tag[0]=='#' || $cc->tag != $e->tag) continue;
 												$conti2 = ($cc!==$e);
 												break;
 											}
@@ -539,7 +579,7 @@ class html {
 											$e_found = false;
 											foreach ($z as $cc)
 											{
-												if ($cc->tag{0}=='#') continue;
+												if ($cc->tag[0]=='#') continue;
 												if ($cc===$e)
 												{
 													$e_found = $calc[$nn];
@@ -574,8 +614,8 @@ class html {
 											{
 												$v = trim($v);
 												$tn = substr($v, 1);
-												$conti2 = ($e2==$v || ($v{0}=='#' && $a2['id']==$tn));
-												if (!$conti2 && $v{0}=='.')
+												$conti2 = ($e2==$v || ($v[0]=='#' && $a2['id']==$tn));
+												if (!$conti2 && $v[0]=='.')
 												{
 													if ($e_classes===NULL)
 													{$e_classes = (isset($a2['class'])?preg_split('#\s+#', $a2['class']):[]);}
@@ -612,7 +652,7 @@ class html {
 													$conti3 = false;
 													break;
 												}
-												if ($prev_combinator=='+' && $cc->tag{0}!='#') $start = false;
+												if ($prev_combinator=='+' && $cc->tag[0]!='#') $start = false;
 											}
 										}
 									break;
@@ -689,7 +729,7 @@ class html {
 		$queue = array_values($this->children);
 		while ($e = $queue[$qkey++])
 		{
-			if (!$e->closer && $e->tag{0}!='#' && !in_array($e->tag, HTML_ELEMENTS_VOID))
+			if (!$e->closer && $e->tag[0]!='#' && !in_array($e->tag, HTML_ELEMENTS_VOID))
 			{
 				$e->closer = '</'.$e->tag.'>';
 				$res++;
@@ -735,7 +775,7 @@ class html {
 		$queue = $this->children;
 		while ($e = $queue[$qkey++])
 		{
-			if ($e->tag{0}!='#' || strlen(trim($e->tag_block)))
+			if ($e->tag[0]!='#' || strlen(trim($e->tag_block)))
 			{
 				$level = $level2 = count($e->parents())-1;
 				if (end($e->parent->children)===$e) $level2--;
@@ -777,7 +817,7 @@ class html {
 		$queue = [$this];
 		while ($e = $queue[$qkey++])
 		{
-			if ($e->tag{0}!='#')
+			if ($e->tag[0]!='#')
 			{
 				$a = $e->attrs();
 				$a_keys = array_keys($a);
@@ -845,13 +885,6 @@ class html {
 							Значения больше $ctrl['level'], либо ниже 0 передавать бессмысленно.
 							Если занести NULL - перемотка не будет осуществляться (так по-умолчанию).
 							С 'rewind_level' будьте осторожны, т.к. возможен бесконечный цикл!
-						'continue_level' - (int) (cтрогая проверка на int!) уровень, с которого требуется выскочить. Аналог continue у циклов.
-							Если занести сюда значение, равное значению $ctrl['level'], то узлы, находящиеся справа от текущего ("соседи справа") обработаны не будут.
-							Если занести ($ctrl['level']-1), то будет тоже самое, но обработаны не будут в том числе и соседи справа от *родителя* текущего узла.
-							и так далее...
-							Если передать 0, то обработка полностью прекратится.
-							Значения больше $ctrl['level'], либо ниже 0 передавать бессмысленно.
-							Если занести NULL - выскакивания не будет (так по-умолчанию).
 						'stack' - (массив) (только для чтения) стек родителей. По сути это список родителей текущего обрабатываемого узла, начиная от самого дальнего (!) родителя (т.е. от базового узла) и заканчивая самым ближним родителем. Для различных проверок стека удобны функции с префиксом stack_*, такие как html::stack_have().
 			
 			Если колбек вернет TRUE, то обход будет немедленно полностью прекращен. При этом возвращенное колбеком значение будет передано как результат вызова функции.
@@ -915,7 +948,7 @@ class html {
 		static $attrs_cache = [];
 		if ($values===NULL)
 		{
-			if ($this->tag{0}=='#') return [];
+			if ($this->tag[0]=='#') return [];
 			$res = [];
 			if (($v = ($attrs_cache[$this->tag_block]))!==NULL)
 			{return $v;}
@@ -946,7 +979,7 @@ class html {
 		}
 			else
 		{
-			if ($this->tag{0}=='#' || !preg_match('#^(<[^\s<>]+\s*).*?([\s/]*>)$#s', $this->tag_block, $m))
+			if ($this->tag[0]=='#' || !preg_match('#^(<[^\s<>]+\s*).*?([\s/]*>)$#s', $this->tag_block, $m))
 			{return;}
 			foreach ($values as $k=>&$v) $v = $k.'="'.htmlspecialchars($v).'"';
 			unset($v);
@@ -1183,7 +1216,7 @@ class html {
 	*/
 	public function clear()
 	{
-		if ($this->tag{0}=='#')
+		if ($this->tag[0]=='#')
 		{$this->tag_block = '';}
 			else
 		{$this->children = [];}
@@ -1259,8 +1292,8 @@ class html {
 		{
 			if (isset($this->c_inner))
 			{return $this->c_inner;}
-			// рекурсией выходи на 30-40% быстрее, чем если от нее избавиться
-			if (!$this->parent || $this->tag{0}!='#')
+			// рекурсией выходит на 30-40% быстрее, чем если от нее избавиться
+			if (!$this->parent || $this->tag[0]!='#')
 			{$this->c_inner = html::render($this->children);}
 				else
 			{$this->c_inner = html::render($this);}
@@ -1280,7 +1313,7 @@ class html {
 		{
 			if (isset($this->c_outer))
 			{return $this->c_outer;}
-			// рекурсией выходи на 30-40% быстрее, чем если от нее избавиться
+			// рекурсией выходит на 30-40% быстрее, чем если от нее избавиться
 			if (!$this->parent)
 			{$this->c_outer = html::render($this->children);}
 				else
@@ -1309,6 +1342,50 @@ class html {
 			{$res[] = $elem->tag_block . html::render($elem->children) . $elem->closer;}
 		}
 		return implode($res);
+	}
+	
+	/*	Получить только открывашки тегов внутри указанных узлов и добавить строки в массив $res.
+		Текстовые узлы и комментарии исключаются.
+	*/
+	static protected function render_tag_blocks($nodes, &$res)
+	{
+		// с рекурсией очень быстро работает, не нужно от нее избавляться
+		foreach ($nodes as $elem)
+		{
+			if (!in_array($elem->tag, ['#text', '#comment']))
+			{
+				$res[] = $elem->tag_block;
+				html::render_tag_blocks($elem->children, $res);
+			}
+		}
+	}
+	
+	
+	/*	Получить только текстовые узлые внутри указанных узлов и добавить строки в массив $res.
+		Комментарии исключаются.
+	*/
+	static protected function render_texts($nodes, &$res)
+	{
+		// с рекурсией очень быстро работает, не нужно от нее избавляться
+		foreach ($nodes as $elem)
+		{
+			if ($elem->tag=='#text')
+			{$res[] = $elem->tag_block;}
+				else
+			{html::render_texts($elem->children, $res);}
+		}
+	}
+	
+	/*	Получить только открывашки тегов родителей текущего узла. Вернет массив строк.
+		Текстовые узлы и комментарии исключаются.
+	*/
+	static protected function parent_tag_blocks()
+	{
+		$res = [];
+		$c = $this;
+		while (($c = $c->parent) && ($c->tag!==NULL) && !in_array($c->tag, ['#text', '#comment', ]))
+		{$res[] = $c->tag_block;}
+		return $res;
 	}
 	
 	/*	Упаковать список узлов в общий (корневой) тег.
@@ -2241,6 +2318,15 @@ class html {
 								$a['src'] = url_abs($a['src'], $url);
 								$src_stats[$a['src']][] = $n;
 							}
+								else
+							{
+								if ($do_debug)
+								{$debug_func($n, 'удаляем изображения без атрибута src');}
+								$total++;
+								$n->remove();
+								$c['skip'] = true;
+								return;
+							}
 						break;
 						case 'iframe':
 							// фреймы уже проверены на валидность
@@ -2671,7 +2757,7 @@ class html {
 		$is_xml = false;
 		
 		$curr_parent = $this;
-		if ($this->tag{0}=='#')
+		if ($this->tag[0]=='#')
 		{$only_inner = false;}
 		$curr_parent->children = [];
 		$parent_stack = [];
@@ -2684,7 +2770,7 @@ class html {
 			$offset = $mm[1];
 			preg_match('#[!\?\w:]+#s', $tag_block, $m2);
 			$name = strtolower($m2[0]);
-			$is_opened = ($tag_block{1}!='/');
+			$is_opened = ($tag_block[1]!='/');
 			
 			if ($special_opened && ($is_opened || $name!=$special_opened))
 			{continue;}
@@ -3007,10 +3093,10 @@ function url_abs($rel_url, $base_url)
 	{return $rel_url;}
 	if (preg_match('#^[a-z]+:#i', $rel_url))
 	{return $base_url;}
-	if (in_array($rel_url{0}, ['?', '#']))
-	{return reset(explode($rel_url{0}, $base_url, 2)).$rel_url;}
+	if (in_array($rel_url[0], ['?', '#']))
+	{return reset(explode($rel_url[0], $base_url, 2)).$rel_url;}
 	$p = parse_url($base_url);
-	$pp = (($rel_url{0}=='/')?'':preg_replace('#/[^/]*$#', '', $p['path']));
+	$pp = (($rel_url[0]=='/')?'':preg_replace('#/[^/]*$#', '', $p['path']));
 	$abs = $p['host'].$pp.'/'.$rel_url;
 	if (!preg_match('#^(https?|ftp)$#i', $p['scheme']))
 	{$p['scheme'] = 'http';}
@@ -3110,7 +3196,7 @@ function cu_download($url, $allow_404 = true, $timeout = 20, $referer = NULL, $h
 			CURLOPT_SSL_VERIFYHOST => false,
 			CURLOPT_CONNECTTIMEOUT => 10,
 			CURLOPT_TIMEOUT => $timeout,
-			CURLOPT_USERAGENT => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:64.0) Gecko/20100101 Firefox/64.0',
+			CURLOPT_USERAGENT => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:85.0) Gecko/20100101 Firefox/85.0',
 			CURLOPT_HEADER => 1,
 			CURLOPT_HTTPHEADER => array_merge([
 				'Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8', 
@@ -3118,6 +3204,8 @@ function cu_download($url, $allow_404 = true, $timeout = 20, $referer = NULL, $h
 			], $headers),
 			CURLOPT_ENCODING => 'gzip, deflate',
 			CURLOPT_FOLLOWLOCATION => true,
+			CURLOPT_IPRESOLVE => CURL_IPRESOLVE_V4,
+			// CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_2_0, // требует curl 7.38+
 		]);
 		$res = curl_exec($ch);
 		$code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
