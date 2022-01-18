@@ -115,7 +115,6 @@ class html {
 		Поддерживает (почти) все возможности из спецификации CSS3. 
 		
 		Также имеются дополнительные нестандартные расширения CSS, а именно:
-		(псевдоклассы применяются в отрыве от комбинаторов)
 		
 			:contains("любой текст") - регистронезависимая проверка наличия текста внутри тега (проверяется outerHTML)
 			:notcontains("любой текст") - регистронезависимая проверка отсутствия текста внутри тега (проверяется outerHTML)
@@ -133,7 +132,8 @@ class html {
 			:ritbnotcontains("#регулярка#") - проверка на НЕсовпадение с регуляркой (проверяется виртуальная суммарная строчка открывающих тегов элементов innerHTML)
 			:rptbcontains("#регулярка#") - проверка на совпадение с регуляркой (проверяется виртуальная суммарная строчка открывающих тегов родительских элементов, в порядке подъема вверх, исключая тег самого элемента)
 			:rptbnotcontains("#регулярка#") - проверка на НЕсовпадение с регуляркой (проверяется виртуальная суммарная строчка открывающих тегов родительских элементов, в порядке подъема вверх, исключая тег самого элемента)
-			:header - собрать все заголовки (h1, h2, h3, ...)
+			:header - собрать все заголовки (h1, h2, h3, h4, h5, h6)
+			:topheader - собрать топ заголовки (h1, h2, h3), т.е. без h4-h6
 			:hidden - собирает элементы, имеющие в атрибуте "style" текст "display:none" либо "visibility:hidden" (ищет по регулярке, регистронезависимо)
 			:first - взять первый элемент среди найденных
 			:last - взять последний элемент среди найденных
@@ -159,6 +159,12 @@ class html {
 			@attr_href - (в качестве имени тега, а также можно применять в связке с ".class" и "#id" суффиксами) собрать атрибуты с заданным именем. В данном случае это "href". Вставлять нужно раньше атрибутных требований (это которые в квадратных скобках). Внимание! Результат будет содержать открепленные текстовые узлы, представляющие из себя значения найденных атрибутов в декодированном виде (т.к. атрибуты сами по себе узлами не являются). Пример парсинга значения мета-тега:
 			
 				meta@attr_content[name=description]
+				
+		(!) Внимание: псевдоклассы применяются в отрыве от комбинаторов, при этом запятая тоже считается комбинатором, наряду с " ", "+", "~" и ">".
+		Т.е. вот такая конструкция: "strong,em:first" выберет все теги strong и первый тег em (а не первый элемент из их суммы, как может показаться). 
+		И например "strong,em *:first" будет рассматриваться как "найти все элементы strong, а также найти первые дочерние элементы в элементах типа em".
+		
+		(!) Внимание: при использовании регулярок некоторые символы внутри регулярки могут мешать разбору селектора. Поэтому используйте экранирование для таких символов, как: ":", "#", "@", ">", "(", ")", "[", "]", """, "'" (кавычки обоих типов), " " (любые пробельные символы, в т.ч. табуляция), либо же используйте hex-нотацию (\xAB например).
 		
 		Также имеются псевдоклассы и псевдоэлементы, которые в принципе невозможно прочитать/изменить без js: в таких случаях поведение будет словно соответствующая часть селектора отсутствует. Селекторы читаются согласно стандарту, поэтому можно подавать взятые прямо со стилей HTML-страниц из сети. Чтение и выполнение хорошо оттестированы и прекрасно работают во всех возможных режимах.
 		
@@ -170,8 +176,6 @@ class html {
 				:not(span)
 				:not(.fancy)
 				:not(.crazy, .fancy)
-				
-			- при использовании регулярок некоторые символы внутри регулярки могут мешать разбору всего селектора (возникает PHP-ошибка). В таких случаях используйте HEX-нотацию для необходимых символов (\xAB например). Наиболее очевидным таким символом является ":" (двоеточие). Но в случае двоеточия достаточно перед ним добавить бэкслеш ("\:") и сработает как надо. HEX-нотация же пригодится для разного рода скобок (круглых, квадратных) и возможно каких-то еще символов.
 			
 		Параметры:
 		
@@ -189,14 +193,14 @@ class html {
 		// + опц. псевдоклассы во всех случаях, + опц. атрибут во всех случаях
 		$nth = '\(\s*(?:[\d\-\+n]+|odd|even)\s*\)';
 		if ($allow_extensions)
-		{$ext = '|odd|even|hidden|header|first|last|(?:eq|lt|gt)\(\s*\-?\d+\s*\)|(?:contains|notcontains|icontains|inotcontains|rcontains|rnotcontains|ricontains|ritcontains|rinotcontains|ritnotcontains|rtbcontains|rtbnotcontains|ritbcontains|ritbnotcontains|rptbcontains|rptbnotcontains)\((?:"[^"]+"|\'[^\']+\'|[^\)]+)\)';}
-		$gr = '(?P<tag>(?:@?[\w\-]*|\*)(?:[#\.@][\w\-]+)*)'.
-			'(?P<attrs>(?:\[.*?\])*)'.
-			'(?P<pseudo>(?:\s*(?:(?<!\\\\):(?:active|checked|disabled|empty|enabled|first-child|first-of-type|last-of-type|focus|hover|in-range|invalid|last-child|link|not(?:-parent)?\([\w\-#\.,\s]+\)|only-child|target|valid|visited|root|read-write|lang\([\w\-]+\)|read-only|optional|out-of-range|only-of-type'.$ext.'|nth-of-type'.$nth.'|nth-last-of-type'.$nth.'|nth-last-child'.$nth.'|nth-child'.$nth.')|(?<!\\\\)::(?:after|before|first-letter|first-line|selection)))*)';
+		{$ext = '|odd|even|hidden|header|topheader|first|last|(?:eq|lt|gt)\(\s*\-?\d+\s*\)|(?:contains|notcontains|icontains|inotcontains|rcontains|rnotcontains|ricontains|ritcontains|rinotcontains|ritnotcontains|rtbcontains|rtbnotcontains|ritbcontains|ritbnotcontains|rptbcontains|rptbnotcontains)\s*\(\s*(?:"[^"]+"\s*|\'[^\']+\'\s*|[^\)]+)\)';}
+		$gr = '(?P<tag>(?:(?<!\\\\)@?[\w\-]*|(?<!\\\\)\*)(?:(?<!\\\\)[#\.@][\w\-]+)*)'.
+			'(?P<attrs>(?:(?<!\\\\)\[.*?(?<!\\\\)\])*)'.
+			'(?P<pseudo>(?:\s*(?:(?<!\\\\):(?:active|checked|disabled|empty|enabled|first-child|first-of-type|last-of-type|focus|hover|in-range|invalid|last-child|link|not(?:-parent)?\s*\([\w\-#\.,\s]+\)|only-child|target|valid|visited|root|read-write|lang\s*\(\s*[\w\-]+\s*\)|read-only|optional|out-of-range|only-of-type'.$ext.'|nth-of-type'.$nth.'|nth-last-of-type'.$nth.'|nth-last-child'.$nth.'|nth-child'.$nth.')|(?<!\\\\)::(?:after|before|first-letter|first-line|selection)))*)';
 		$off = 0;
 		$buf = []; // текущая собираемая группа
 		$list = []; // список групп, которые нужно найти
-		if (!preg_match_all('~((?P<combinator>\s*(\+|\~|\>|,)\s*|\s+)|'.$gr.')~si', $s, $m, PREG_SET_ORDER))
+		if (!preg_match_all('~((?P<combinator>\s*(?<!\\\\)(\+|\~|\>|,)\s*|(?<!\\\\)\s+)|'.$gr.')~si', $s, $m, PREG_SET_ORDER))
 		{throw new Exception('Invalid css selector!');}
 		foreach ($m as $mm)
 		{
@@ -231,6 +235,7 @@ class html {
 		}
 		$list[] = $buf;
 		$list = array_filter($list);
+		
 		if ($off < strlen($s)) throw new Exception('Invalid css selector!');
 		foreach ($list as $group)
 		{
@@ -370,11 +375,11 @@ class html {
 								{
 									$z = explode('(', $p, 2);
 									list($p, $ps) = $z;
-									$p = strtolower($p);
+									$p = strtolower(trim($p));
 									if ($ps)
 									{
-										$ps = trim(rtrim($ps, ')'));
-										$ps = preg_replace('#^(["\'])(.*)\1$#s', '\2', $ps);
+										$ps = rtrim(rtrim(trim($ps), ')'));
+										$ps = trim(preg_replace('#^(["\'])(.*)\1$#s', '\2', $ps));
 									}
 									// напоминаю, что $conti2 - это условие выхода из цикла, т.е. это инверсия "найденности"
 									$conti2 = false;
@@ -447,13 +452,13 @@ class html {
 										break;
 										case 'ritcontains':
 											$qwe = [];
-											html::render_texts($e->children, $qwe);
+											html::render_texts([$e, ], $qwe);
 											$conti2 = !preg_match($ps, implode($qwe));
 											unset($qwe);
 										break;
 										case 'ritnotcontains':
 											$qwe = [];
-											html::render_texts($e->children, $qwe);
+											html::render_texts([$e, ], $qwe);
 											$conti2 = (bool)preg_match($ps, implode($qwe));
 											unset($qwe);
 										break;
@@ -494,6 +499,9 @@ class html {
 										break;
 										case 'header':
 											$conti2 = (!in_array($e->tag, ['h1', 'h2', 'h3', 'h4', 'h5', 'h6']));
+										break;
+										case 'topheader':
+											$conti2 = (!in_array($e->tag, ['h1', 'h2', 'h3', ]));
 										break;
 										case 'hidden':
 											$conti2 = (!preg_match('#display\s*:\s*none|visibility\s*:\s*hidden#i', $a['style']));
@@ -1361,7 +1369,7 @@ class html {
 	}
 	
 	
-	/*	Получить только текстовые узлые внутри указанных узлов и добавить строки в массив $res.
+	/*	Получить только текстовые узлы внутри указанных узлов и добавить строки в массив $res.
 		Комментарии исключаются.
 	*/
 	static protected function render_texts($nodes, &$res)
@@ -1376,10 +1384,11 @@ class html {
 		}
 	}
 	
-	/*	Получить только открывашки тегов родителей текущего узла. Вернет массив строк.
+	/*	Получить только открывашки тегов родителей текущего узла (по пути наверх).
 		Текстовые узлы и комментарии исключаются.
+		Вернет массив строк.
 	*/
-	static protected function parent_tag_blocks()
+	protected function parent_tag_blocks()
 	{
 		$res = [];
 		$c = $this;
