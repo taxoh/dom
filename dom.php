@@ -28,7 +28,9 @@
 		- закрывающиеся теги, которые не были открыты (т.е. лишние закрывашки) парсер считает текстовыми узлами
 		- если закрывашка пуста, это еще не значит что это тег незакрывающегося типа
 		- html-entities не декодируются кроме как в атрибутах
-		- может парсить XML файлы (но трактовать документ будет как HTML, в некоторых случаях это может влиять на корректность разбора)
+		- умеет коррекно парсить XML и PHP файлы:
+			- корректно воспринимает XML-прологи в любом участке документа (в т.ч. php-блоки кода), помечает их как комментарии (тип тега - #comment). Для пролога открывашкой служит "<" + "?", а закрывашкой "?" + ">".
+			- XML-документы трактует как HTML-документы, в некоторых случаях (связанных с XML-особенностями) это может влиять на корректность разбора
 		- блоки CDATA не замечает, читает их как и остальной (обычный) текст
 		- "открепленный узел" свое состояние не меняет, с ним можно продолжать работу, но стоит понимать, что он помнит своего (прежнего) родителя и находится в невалидном состоянии (значение parent у него невалидно). Сделать его валидным снова можно передав его в качестве параметра любой из функций:
 			- append()
@@ -74,14 +76,14 @@ define('HTML_ELEMENTS_OBSOLETE', ['acronym', 'applet', 'basefont', 'bgsound', 'b
 // элементы, добавленные в HTML5
 define('HTML_ELEMENTS_HTML5', ['article', 'aside', 'bdi', 'details', 'dialog', 'figcaption', 'figure', 'footer', 'header', 'main', 'mark', 'menuitem', 'meter', 'nav', 'progress', 'rp', 'rt', 'ruby', 'section', 'summary', 'time', 'wbr', 'datalist', 'keygen', 'output', ]);
 // !!Не трогать!! Теги, не имеющие закрывающих. В режиме XML этот список не учитывается.
-define('HTML_ELEMENTS_VOID', ['!doctype', '?xml', 'area', 'base', 'basefont', 'bgsound', 'br', 'col', 'command', 'embed', 'frame', 'hr', 'img', 'input', 'isindex', 'keygen', 'link', 'meta', 'nextid', 'param', 'source', 'track', 'wbr', ]);
+define('HTML_ELEMENTS_VOID', ['!doctype', 'area', 'base', 'basefont', 'bgsound', 'br', 'col', 'command', 'embed', 'frame', 'hr', 'img', 'input', 'isindex', 'keygen', 'link', 'meta', 'nextid', 'param', 'source', 'track', 'wbr', ]);
 // !!Не трогать!! Элементы, которые нельзя располагать внутри элементов такого же типа. Т.е. DOM-парсеру предписывается при встрече такого элемента закрыть предыдущий элемент такого же типа. Проверено на последней версии blink + HTML5.
 define('HTML_ELEMENTS_NON_NESTED', ['a', 'body', 'button', 'dd', 'dt', 'form', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'head', 'html', 'iframe', 'select', 'li', 'nobr', 'noembed', 'noframes', 'noindex', 'noscript', 'optgroup', 'option', 'p', 'script', 'style', 'textarea', 'title', 'xmp', ]);
 // !!Не трогать!! Элементы, которые нельзя располагать внутри параграфа. Т.е. DOM-парсеру предписывается при встрече такого элемента закрыть открытый параграф. Проверено на последней версии blink + HTML5.
 define('HTML_ELEMENTS_NON_PARAGRAPH', ['address', 'article', 'aside', 'blockquote', 'center', 'dd', 'details', 'dialog', 'dir', 'div', 'dl', 'dt', 'fieldset', 'figcaption', 'figure', 'footer', 'form', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'header', 'hgroup', 'hr', 'li', 'main', 'menu', 'nav', 'ol', 'p', 'plaintext', 'pre', 'section', 'summary', 'table', 'ul', 'xmp', ]);
 // !!Не трогать!! Элементы, которые нельзя располагать внутри заголовков (h1-h6). Т.е. DOM-парсеру предписывается при встрече такого элемента закрыть открытый заголовок. Проверено на последней версии blink + HTML5.
 define('HTML_ELEMENTS_NON_HEADER', ['body', 'caption', 'col', 'colgroup', 'frame', 'frameset', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'head', 'html', 'tbody', 'td', 'tfoot', 'th', 'thead', 'tr', ]);
-// !!Не трогать!! Теги, которые будучи открытыми не воспринимают других тегов, в том числе комментарии. В режиме XML этот список не учитывается.
+// !!Не трогать!! Теги, которые будучи открытыми не воспринимают других тегов, в том числе комментарии.
 define('HTML_ELEMENTS_SPECIAL', ['script', 'style']);
 
 
@@ -948,9 +950,10 @@ class html {
 	
 	/*	Получить или установить атрибуты тега.
 			$values - массив вида 'ключ'=>'значение'. Если не задан, то функция вернет текущий массив атрибутов тега.
+			$encode_entities - выполнить ли кодирование значений атрибутов через htmlspecialchars()
 		Атрибуты возвращаются в декодированном виде, имена атрибутов переводятся в нижний регистр.
 	*/
-	public function attrs($values = NULL)
+	public function attrs($values = NULL, $encode_entities = true)
 	{
 		// эта переменная общая на весь скрипт (работает вне конкретных экземпляров объекта)
 		static $attrs_cache = [];
@@ -989,7 +992,10 @@ class html {
 		{
 			if ($this->tag[0]=='#' || !preg_match('#^(<[^\s<>]+\s*).*?([\s/]*>)$#s', $this->tag_block, $m))
 			{return;}
-			foreach ($values as $k=>&$v) $v = $k.'="'.htmlspecialchars($v).'"';
+			if ($encode_entities)
+			{foreach ($values as $k=>&$v) $v = $k.'="'.htmlspecialchars($v).'"';}
+				else
+			{foreach ($values as $k=>&$v) $v = $k.'="'.$v.'"';}
 			unset($v);
 			$this->tag_block = ($values?$m[1]:rtrim($m[1])).(($values && !preg_match('#\s$#', $m[1]))?' ':'').implode(' ', $values).$m[2];
 			$this->invalidate();
@@ -2763,7 +2769,6 @@ class html {
 			$this->invalidate();
 			return;
 		}
-		$is_xml = false;
 		
 		$curr_parent = $this;
 		if ($this->tag[0]=='#')
@@ -2771,22 +2776,23 @@ class html {
 		$curr_parent->children = [];
 		$parent_stack = [];
 		$offset = $last_opened_or_closed_tag_offset = 0;
-		if (!preg_match_all('#<!--|-->|</?(?:[a-z][\w:]*|!doctype|\?xml)\b[^<>]*(?<!--)>#si', $html, $m, PREG_OFFSET_CAPTURE))
+		if (!preg_match_all('#<!--|-->|<\?|\?'.'>|</?(?:[a-z][\w:]*|!doctype)\b[^<>]*(?<!--)>#si', $html, $m, PREG_OFFSET_CAPTURE))
 		{$m = [[]];}
+		// типы возможных комментариев и их закрывашки
+		$comment_types = [
+			'<!--' => '-->', // html-комментарий
+			"\x3C\x3F" => "\x3F\x3E", // 'php-открывашка' => 'php-закрывашка'
+		];
 		foreach ($m[0] as $mm)
 		{
 			$tag_block = $mm[0];
 			$offset = $mm[1];
-			preg_match('#[!\?\w:]+#s', $tag_block, $m2);
-			$name = strtolower($m2[0]);
-			$is_opened = ($tag_block[1]!='/');
 			
-			if ($special_opened && ($is_opened || $name!=$special_opened))
-			{continue;}
-			
+			// есть открытый коммент
 			if ($comment)
 			{
-				if ($tag_block=='-->')
+				// ранее открытый коммент закрылся
+				if ($tag_block==$comment->close_type)
 				{
 					$comment->tag_block = substr($html, $comment_started_at, $offset+strlen($tag_block)-$comment_started_at);
 					$last_opened_or_closed_tag_offset = $offset+strlen($tag_block);
@@ -2794,16 +2800,25 @@ class html {
 				}
 				continue;
 			}
-			elseif ($tag_block=='<!--')
+			elseif ($close_type = $comment_types[$tag_block])
 			{
+				// открылся какой-либо из комментов
 				$this->try_add_text_node($html, $last_opened_or_closed_tag_offset, $offset, $curr_parent);
 				$comment = new html();
 				$comment->tag = '#comment';
 				$comment_started_at = $offset;
 				$comment->parent = $curr_parent;
 				$comment->parent->children[] = $comment;
+				$comment->close_type = $close_type;
 				continue;
 			}
+			
+			preg_match('#[!\?\w:]+#s', $tag_block, $m2);
+			$name = strtolower($m2[0]);
+			$is_opened = ($tag_block[1]!='/');
+			
+			if ($special_opened && ($is_opened || $name!=$special_opened))
+			{continue;}
 			
 			$this->try_add_text_node($html, $last_opened_or_closed_tag_offset, $offset, $curr_parent);
 			$last_opened_or_closed_tag_offset = $offset+strlen($tag_block);
@@ -2812,106 +2827,104 @@ class html {
 				// тег открылся.
 				
 				// список специальных тегов, которые игнорируют любые другие теги пока сами не закроются.
-				if (!$is_xml)
+				if (in_array($name, HTML_ELEMENTS_SPECIAL))
+				{$special_opened = $name;}
+					else
 				{
-					if (in_array($name, HTML_ELEMENTS_SPECIAL))
-					{$special_opened = $name;}
-						else
+					/*	Делается проверка родителей для текущего тега ($name). 
+							$blocked_parents - если среди родителей текущего тега ($name) будет найден один из этих тегов ("неправильный" родитель), то он будет закрыт. Ищется максимально топовый.
+							$stoppers - список тегов, *до* которых родители (при пути наверх) будут проверяться: если встречен - проверка прерывается.
+						Используются именно in_array() и именно динамическое составление - выходит быстрее! Проверено!
+					*/
+					$stoppers = $blocked_parents = [];
+					
+					// элементы, которые не могут быть вложенными в такие же элементы
+					if (in_array($name, HTML_ELEMENTS_NON_NESTED))
+					{$blocked_parents[] = $name;}
+					if (in_array($name, HTML_ELEMENTS_NON_PARAGRAPH))
+					{$blocked_parents[] = 'p';}
+					// (!) вот это не тестил
+					if (in_array($name, HTML_ELEMENTS_NON_HEADER))
 					{
-						/*	Делается проверка родителей для текущего тега ($name). 
-								$blocked_parents - если среди родителей текущего тега ($name) будет найден один из этих тегов ("неправильный" родитель), то он будет закрыт. Ищется максимально топовый.
-								$stoppers - список тегов, *до* которых родители (при пути наверх) будут проверяться: если встречен - проверка прерывается.
-							Используются именно in_array() и именно динамическое составление - выходит быстрее! Проверено!
-						*/
-						$stoppers = $blocked_parents = [];
-						
-						// элементы, которые не могут быть вложенными в такие же элементы
-						if (in_array($name, HTML_ELEMENTS_NON_NESTED))
-						{$blocked_parents[] = $name;}
-						if (in_array($name, HTML_ELEMENTS_NON_PARAGRAPH))
-						{$blocked_parents[] = 'p';}
-						// (!) вот это не тестил
-						if (in_array($name, HTML_ELEMENTS_NON_HEADER))
+						$blocked_parents[] = 'h1';
+						$blocked_parents[] = 'h2';
+						$blocked_parents[] = 'h3';
+						$blocked_parents[] = 'h4';
+						$blocked_parents[] = 'h5';
+						$blocked_parents[] = 'h6';
+					}
+					switch ($name)
+					{
+						case 'li':
+						case 'dd':
+						case 'dt':
+							foreach (['li', 'dd', 'dt'] as $v) $blocked_parents[] = $v;
+							foreach (['ul', 'ol', 'dl', 'dir'] as $v) $stoppers[] = $v;
+						break;
+						case 'head':
+						case 'body':
+							// т.е. head будет закрыт, если он попытается быть родителем для body (и наоборот)
+							$blocked_parents[] = 'head';
+							$blocked_parents[] = 'body';
+						break;
+						case 'td':
+						case 'th':
+							// 'col' сюда не имеет смысла добавлять, т.к. это void-элемент
+							foreach (['td', 'th', 'caption', 'colgroup', ] as $v) $blocked_parents[] = $v;
+							$stoppers[] = 'table';
+						break;
+						case 'tr':
+							// 'col' сюда не имеет смысла добавлять, т.к. это void-элемент
+							foreach (['tr', 'td', 'th', 'caption', 'colgroup', ] as $v) $blocked_parents[] = $v;
+							$stoppers[] = 'table';
+						break;
+						case 'thead':
+						case 'tbody':
+						case 'tfoot':
+							// 'col' сюда не имеет смысла добавлять, т.к. это void-элемент
+							foreach (['thead', 'tbody', 'tfoot', 'td', 'tr', 'th', 'caption', 'colgroup', ] as $v) $blocked_parents[] = $v;
+							$stoppers[] = 'table';
+						break;
+						case 'caption':
+						case 'colgroup':
+							// 'col' сюда не имеет смысла добавлять, т.к. это void-элемент
+							$blocked_parents[] = 'caption';
+							$blocked_parents[] = 'colgroup';
+							$stoppers[] = 'table';
+						break;
+						case 'col':
+							// 'col' сюда не имеет смысла добавлять, т.к. это void-элемент
+							foreach (['tr', 'td', 'th', 'caption'] as $v) $blocked_parents[] = $v;
+							$stoppers[] = 'table';
+						break;
+					}
+					
+					// единственные теги, которые можно внутри h1-h6. Остальные прервут любой заголовок.
+					// if (!in_array($name, ['tt', 'i', 'b', 'big', 'small', 'em', 'strong', 'dfn', 'code', 'samp', 'kbd', 'var', 'cite', 'abbr', 'acronym', 'a', 'img', 'object', 'br', 'map', 'q', 'sub', 'sup', 'span', 'bdo', 'input', 'select', 'textarea', 'label', 'button', ]))
+					// {
+						// foreach (['h1', 'h2', 'h3', 'h4', 'h5', 'h6', ] as $v)
+						// {$blocked_parents[] = $v;}
+					// }
+					
+					if ($blocked_parents)
+					{
+						$n = 0;
+						$found_n = -1;
+						foreach ($parent_stack as $e)
 						{
-							$blocked_parents[] = 'h1';
-							$blocked_parents[] = 'h2';
-							$blocked_parents[] = 'h3';
-							$blocked_parents[] = 'h4';
-							$blocked_parents[] = 'h5';
-							$blocked_parents[] = 'h6';
+							if (in_array($e->tag, $stoppers)) break;
+							if (in_array($e->tag, $blocked_parents))
+							{$found_n = $n;}
+							$n++;
 						}
-						switch ($name)
+						if ($found_n>=0)
 						{
-							case 'li':
-							case 'dd':
-							case 'dt':
-								foreach (['li', 'dd', 'dt'] as $v) $blocked_parents[] = $v;
-								foreach (['ul', 'ol', 'dl', 'dir'] as $v) $stoppers[] = $v;
-							break;
-							case 'head':
-							case 'body':
-								// т.е. head будет закрыт, если он попытается быть родителем для body (и наоборот)
-								$blocked_parents[] = 'head';
-								$blocked_parents[] = 'body';
-							break;
-							case 'td':
-							case 'th':
-								// 'col' сюда не имеет смысла добавлять, т.к. это void-элемент
-								foreach (['td', 'th', 'caption', 'colgroup', ] as $v) $blocked_parents[] = $v;
-								$stoppers[] = 'table';
-							break;
-							case 'tr':
-								// 'col' сюда не имеет смысла добавлять, т.к. это void-элемент
-								foreach (['tr', 'td', 'th', 'caption', 'colgroup', ] as $v) $blocked_parents[] = $v;
-								$stoppers[] = 'table';
-							break;
-							case 'thead':
-							case 'tbody':
-							case 'tfoot':
-								// 'col' сюда не имеет смысла добавлять, т.к. это void-элемент
-								foreach (['thead', 'tbody', 'tfoot', 'td', 'tr', 'th', 'caption', 'colgroup', ] as $v) $blocked_parents[] = $v;
-								$stoppers[] = 'table';
-							break;
-							case 'caption':
-							case 'colgroup':
-								// 'col' сюда не имеет смысла добавлять, т.к. это void-элемент
-								$blocked_parents[] = 'caption';
-								$blocked_parents[] = 'colgroup';
-								$stoppers[] = 'table';
-							break;
-							case 'col':
-								// 'col' сюда не имеет смысла добавлять, т.к. это void-элемент
-								foreach (['tr', 'td', 'th', 'caption'] as $v) $blocked_parents[] = $v;
-								$stoppers[] = 'table';
-							break;
-						}
-						
-						// единственные теги, которые можно внутри h1-h6. Остальные прервут любой заголовок.
-						// if (!in_array($name, ['tt', 'i', 'b', 'big', 'small', 'em', 'strong', 'dfn', 'code', 'samp', 'kbd', 'var', 'cite', 'abbr', 'acronym', 'a', 'img', 'object', 'br', 'map', 'q', 'sub', 'sup', 'span', 'bdo', 'input', 'select', 'textarea', 'label', 'button', ]))
-						// {
-							// foreach (['h1', 'h2', 'h3', 'h4', 'h5', 'h6', ] as $v)
-							// {$blocked_parents[] = $v;}
-						// }
-						
-						if ($blocked_parents)
-						{
-							$n = 0;
-							$found_n = -1;
-							foreach ($parent_stack as $e)
-							{
-								if (in_array($e->tag, $stoppers)) break;
-								if (in_array($e->tag, $blocked_parents))
-								{$found_n = $n;}
-								$n++;
-							}
-							if ($found_n>=0)
-							{
-								$parent_stack = array_slice($parent_stack, $found_n+1);
-								$curr_parent = ($parent_stack?reset($parent_stack):$this);
-							}
+							$parent_stack = array_slice($parent_stack, $found_n+1);
+							$curr_parent = ($parent_stack?reset($parent_stack):$this);
 						}
 					}
 				}
+				
 				
 				$obj = new html();
 				$obj->tag = $name;
@@ -2919,9 +2932,7 @@ class html {
 				$obj->parent = $curr_parent;
 				$obj->parent->children[] = $obj;
 				
-				if ($name=='?xml') $is_xml = true;
-				
-				if (($is_xml && $name=='?xml') || (!$is_xml && (in_array($name, HTML_ELEMENTS_VOID) || preg_match('#(\s|<\w+)/\s*>#', $tag_block))))
+				if (in_array($name, HTML_ELEMENTS_VOID) || preg_match('#(\s|<\w+)/\s*>#', $tag_block))
 				{
 					// тег, "не-имеющий-закрывающего"
 				}
@@ -2935,7 +2946,7 @@ class html {
 				else
 			{
 				// тег закрылся (из тех, что ранее были открыты)
-				if (!$is_xml && in_array($name, HTML_ELEMENTS_SPECIAL))
+				if (in_array($name, HTML_ELEMENTS_SPECIAL))
 				{$special_opened = '';}
 				$n = 0;
 				$was_table = $found = false;
@@ -2972,7 +2983,12 @@ class html {
 			}
 		}
 		$curr_parent = ($parent_stack?reset($parent_stack):$this);
-		if (!$comment)
+		if ($comment)
+		{
+			// до конца документа идёт открытый ранее HTML-коммент (любого типа, в т.ч. XML-пролог)
+			$comment->tag_block = substr($html, $comment_started_at);
+		}
+			else
 		{$this->try_add_text_node($html, $last_opened_or_closed_tag_offset, strlen($html), $curr_parent);}
 		// вывернуть содержимое, если заменяется outerHTML
 		if (!$only_inner)
