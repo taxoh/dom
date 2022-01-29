@@ -25,13 +25,16 @@
 		- у тегов типов '#text' и '#comment' не бывает дочерних узлов
 		- узлы остальных типов не хранят какую-либо текстовую информацию
 		- дерево можно редактировать в любой момент: модифицировать или переносить узлы
-		- закрывающиеся теги, которые не были открыты (т.е. лишние закрывашки) парсер считает текстовыми узлами
 		- если закрывашка пуста, это еще не значит что это тег незакрывающегося типа
 		- html-entities не декодируются кроме как в атрибутах
+		- закрывающиеся теги, которые не были открыты (т.е. лишние закрывашки) парсер игнорирует (за исключением тегов: </p>, </br>). Если после этого собрать документ, то в результате они не появятся
+		- в имени тега могут присутствовать практически любые символы, но начинаться имя тега должно с англ. буквы (a-z).
+			- если имя тега начинается с "!", и это не doctype, то такой тег будет преобразован в комментарий
 		- умеет парсить XML-файлы (и даже HTML-файлы, содержащие php-код, но с большими оговорками!):
 			- XML-прологи могут встречаться в любом участке документа (в т.ч. в виде php-блоков кода), парсер помечает их как комментарии (тип тега - #comment). Для пролога открывашкой служит "< ?", а закрывашкой "? >" (без пробелов).
 			- XML-документы трактует как HTML-документы, в некоторых случаях (связанных с XML-особенностями) это может влиять на корректность разбора
-			- ВАЖНО: php-блоки не могут находиться внутри блока тега, в т.ч. внутри атрибутов или их имен. Иначе парсер неверно прочитает структуру документа.
+			- в режиме XML (если найден характерный именно для XML пролог) "теги-не-требующие-закрывающих" детектируются автоматически по слешу на конце открывающего блока тега (в режиме HTML так не работает). Но применяются также и HTML-правила, имейте в виду. Т.е., например, тег <br> всегда будет автозакрыт.
+			- ВАЖНО: php-блоки не могут находиться внутри блока тега, в т.ч. внутри атрибутов или их имен. Иначе парсер неверно прочитает структуру документа. Поэтому для работы с текстами, содержащими php-блоки лучше перед парсингом заменяйте php-блоки на некоторый неиспользуемый ASCII-символ (скажем, нульбайт), а после - восстановите. 
 		- блоки CDATA не замечает, читает их как и остальной (обычный) текст
 		- "открепленный узел" свое состояние не меняет, с ним можно продолжать работу, но стоит понимать, что он помнит своего (прежнего) родителя и находится в невалидном состоянии (значение parent у него невалидно). Сделать его валидным снова можно передав его в качестве параметра любой из функций:
 			- append()
@@ -76,16 +79,16 @@ define('HTML_ELEMENTS_HEAD',  ['base', 'basefont', 'bgsound', 'link', 'meta', 's
 define('HTML_ELEMENTS_OBSOLETE', ['acronym', 'applet', 'basefont', 'bgsound', 'big', 'blink', 'center', 'command', 'data', 'dir', 'font', 'frame', 'frameset', 'hgroup', 'isindex', 'listing', 'marquee', 'nobr', 'noembed', 'noframes', 'plaintext', 'shadow', 'spacer', 'strike', 'tt', 'xmp', ]);
 // элементы, добавленные в HTML5
 define('HTML_ELEMENTS_HTML5', ['article', 'aside', 'bdi', 'details', 'dialog', 'figcaption', 'figure', 'footer', 'header', 'main', 'mark', 'menuitem', 'meter', 'nav', 'progress', 'rp', 'rt', 'ruby', 'section', 'summary', 'time', 'wbr', 'datalist', 'keygen', 'output', ]);
-// !!Не трогать!! Теги, не имеющие закрывающих. В режиме XML этот список не учитывается.
-define('HTML_ELEMENTS_VOID', ['!doctype', 'area', 'base', 'basefont', 'bgsound', 'br', 'col', 'command', 'embed', 'frame', 'hr', 'img', 'input', 'isindex', 'keygen', 'link', 'meta', 'nextid', 'param', 'source', 'track', 'wbr', ]);
+// !!Не трогать!! Теги, не имеющие закрывающих
+define('HTML_ELEMENTS_VOID', ['!doctype' => true, 'area' => true, 'base' => true, 'basefont' => true, 'bgsound' => true, 'br' => true, 'col' => true, 'command' => true, 'embed' => true, 'frame' => true, 'hr' => true, 'img' => true, 'input' => true, 'isindex' => true, 'keygen' => true, 'link' => true, 'meta' => true, 'nextid' => true, 'param' => true, 'source' => true, 'track' => true, 'wbr' => true, ]);
 // !!Не трогать!! Элементы, которые нельзя располагать внутри элементов такого же типа. Т.е. DOM-парсеру предписывается при встрече такого элемента закрыть предыдущий элемент такого же типа. Проверено на последней версии blink + HTML5.
-define('HTML_ELEMENTS_NON_NESTED', ['a', 'body', 'button', 'dd', 'dt', 'form', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'head', 'html', 'iframe', 'select', 'li', 'nobr', 'noembed', 'noframes', 'noindex', 'noscript', 'optgroup', 'option', 'p', 'script', 'style', 'textarea', 'title', 'xmp', ]);
+define('HTML_ELEMENTS_NON_NESTED', ['a' => true, 'body' => true, 'button' => true, 'dd' => true, 'dt' => true, 'form' => true, 'h1' => true, 'h2' => true, 'h3' => true, 'h4' => true, 'h5' => true, 'h6' => true, 'head' => true, 'html' => true, 'iframe' => true, 'select' => true, 'li' => true, 'nobr' => true, 'noembed' => true, 'noframes' => true, 'noindex' => true, 'noscript' => true, 'optgroup' => true, 'option' => true, 'p' => true, 'script' => true, 'style' => true, 'textarea' => true, 'title' => true, 'xmp' => true, ]);
 // !!Не трогать!! Элементы, которые нельзя располагать внутри параграфа. Т.е. DOM-парсеру предписывается при встрече такого элемента закрыть открытый параграф. Проверено на последней версии blink + HTML5.
-define('HTML_ELEMENTS_NON_PARAGRAPH', ['address', 'article', 'aside', 'blockquote', 'center', 'dd', 'details', 'dialog', 'dir', 'div', 'dl', 'dt', 'fieldset', 'figcaption', 'figure', 'footer', 'form', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'header', 'hgroup', 'hr', 'li', 'main', 'menu', 'nav', 'ol', 'p', 'plaintext', 'pre', 'section', 'summary', 'table', 'ul', 'xmp', ]);
+define('HTML_ELEMENTS_NON_PARAGRAPH', ['address' => true, 'article' => true, 'aside' => true, 'blockquote' => true, 'center' => true, 'dd' => true, 'details' => true, 'dialog' => true, 'dir' => true, 'div' => true, 'dl' => true, 'dt' => true, 'fieldset' => true, 'figcaption' => true, 'figure' => true, 'footer' => true, 'form' => true, 'h1' => true, 'h2' => true, 'h3' => true, 'h4' => true, 'h5' => true, 'h6' => true, 'header' => true, 'hgroup' => true, 'hr' => true, 'li' => true, 'main' => true, 'menu' => true, 'nav' => true, 'ol' => true, 'p' => true, 'plaintext' => true, 'pre' => true, 'section' => true, 'summary' => true, 'table' => true, 'ul' => true, 'xmp' => true, ]);
 // !!Не трогать!! Элементы, которые нельзя располагать внутри заголовков (h1-h6). Т.е. DOM-парсеру предписывается при встрече такого элемента закрыть открытый заголовок. Проверено на последней версии blink + HTML5.
-define('HTML_ELEMENTS_NON_HEADER', ['body', 'caption', 'col', 'colgroup', 'frame', 'frameset', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'head', 'html', 'tbody', 'td', 'tfoot', 'th', 'thead', 'tr', ]);
+define('HTML_ELEMENTS_NON_HEADER', ['body' => true, 'caption' => true, 'col' => true, 'colgroup' => true, 'frame' => true, 'frameset' => true, 'h1' => true, 'h2' => true, 'h3' => true, 'h4' => true, 'h5' => true, 'h6' => true, 'head' => true, 'html' => true, 'tbody' => true, 'td' => true, 'tfoot' => true, 'th' => true, 'thead' => true, 'tr' => true, ]);
 // !!Не трогать!! Теги, которые будучи открытыми не воспринимают других тегов, в том числе комментарии.
-define('HTML_ELEMENTS_SPECIAL', ['script', 'style']);
+define('HTML_ELEMENTS_SPECIAL', ['script' => true, 'style' => true, ]);
 
 
 // класс HTML-узла
@@ -740,7 +743,7 @@ class html {
 		$queue = array_values($this->children);
 		while ($e = $queue[$qkey++])
 		{
-			if (!$e->closer && $e->tag[0]!='#' && !in_array($e->tag, HTML_ELEMENTS_VOID))
+			if (!$e->closer && $e->tag[0]!='#' && !HTML_ELEMENTS_VOID[$e->tag])
 			{
 				$e->closer = '</'.$e->tag.'>';
 				$res++;
@@ -2775,19 +2778,20 @@ class html {
 		if ($this->tag[0]=='#')
 		{$only_inner = false;}
 		$curr_parent->children = [];
+		$is_xml = false;
 		$parent_stack = [];
 		$offset = $last_opened_or_closed_tag_offset = 0;
-		if (!preg_match_all('#<!--|-->|<\?|\?'.'>|</?(?:[a-z][\w:]*|!doctype)\b[^<>]*(?<!--)>#si', $html, $m, PREG_OFFSET_CAPTURE))
-		{$m = [[]];}
+		if (!preg_match_all('#<!--|-->|<\?|\?'.'>|</?(!?[a-z][^\s<>/]*)\b[^<>]*(?<!--)>#si', $html, $m, PREG_OFFSET_CAPTURE + PREG_SET_ORDER))
+		{$m = [];}
 		// типы возможных комментариев и их закрывашки
 		$comment_types = [
 			'<!--' => '-->', // html-комментарий
 			"\x3C\x3F" => "\x3F\x3E", // 'php-открывашка' => 'php-закрывашка'
 		];
-		foreach ($m[0] as $mm)
+		foreach ($m as $mm)
 		{
-			$tag_block = $mm[0];
-			$offset = $mm[1];
+			$tag_block = $mm[0][0];
+			$offset = $mm[0][1];
 			
 			// есть открытый коммент
 			if ($comment)
@@ -2795,8 +2799,10 @@ class html {
 				// ранее открытый коммент закрылся
 				if ($tag_block==$comment->close_type)
 				{
-					$comment->tag_block = substr($html, $comment_started_at, $offset+strlen($tag_block)-$comment_started_at);
-					$last_opened_or_closed_tag_offset = $offset+strlen($tag_block);
+					$comment->tag_block = substr($html, $comment_started_at, $offset + strlen($tag_block)-$comment_started_at);
+					$last_opened_or_closed_tag_offset = $offset + strlen($tag_block);
+					if ($tag_block=="\x3f\x3e" && preg_match('#^<\?xml\b#i', $comment->tag_block))
+					{$is_xml = true;}
 					$comment = false;
 				}
 				continue;
@@ -2804,18 +2810,29 @@ class html {
 			elseif ($close_type = $comment_types[$tag_block])
 			{
 				// открылся какой-либо из комментов
+				$comment_started_at = $offset;
 				$this->try_add_text_node($html, $last_opened_or_closed_tag_offset, $offset, $curr_parent);
 				$comment = new html();
 				$comment->tag = '#comment';
-				$comment_started_at = $offset;
 				$comment->parent = $curr_parent;
 				$comment->parent->children[] = $comment;
 				$comment->close_type = $close_type;
 				continue;
 			}
 			
-			preg_match('#[!\?\w:]+#s', $tag_block, $m2);
-			$name = strtolower($m2[0]);
+			$name = strtolower($mm[1][0]);
+			if ($name[0]=='!' && $name!='!doctype')
+			{
+				// поведение современных браузеров: если имя тега начинается с "!" и это не doctype, то превратить тег в комментарий.
+				// при этом не имеет значения закрылся тег или открылся.
+				$cmt = new html();
+				$cmt->tag = '#comment';
+				$cmt->tag_block = '<!--'.substr($tag_block, 2, -1).'-->';
+				$cmt->parent = $curr_parent;
+				$cmt->parent->children[] = $cmt;
+				$last_opened_or_closed_tag_offset = $offset + strlen($tag_block);
+				continue;
+			}
 			$is_opened = ($tag_block[1]!='/');
 			
 			if ($special_opened && ($is_opened || $name!=$special_opened))
@@ -2828,7 +2845,7 @@ class html {
 				// тег открылся.
 				
 				// список специальных тегов, которые игнорируют любые другие теги пока сами не закроются.
-				if (in_array($name, HTML_ELEMENTS_SPECIAL))
+				if (HTML_ELEMENTS_SPECIAL[$name])
 				{$special_opened = $name;}
 					else
 				{
@@ -2840,20 +2857,15 @@ class html {
 					$stoppers = $blocked_parents = [];
 					
 					// элементы, которые не могут быть вложенными в такие же элементы
-					if (in_array($name, HTML_ELEMENTS_NON_NESTED))
+					if (HTML_ELEMENTS_NON_NESTED[$name])
 					{$blocked_parents[] = $name;}
-					if (in_array($name, HTML_ELEMENTS_NON_PARAGRAPH))
+					// элементы, которые нельзя располагать внутри параграфа
+					if (HTML_ELEMENTS_NON_PARAGRAPH[$name])
 					{$blocked_parents[] = 'p';}
+					// элементы, которые нельзя располагать внутри заголовков
 					// (!) вот это не тестил
-					if (in_array($name, HTML_ELEMENTS_NON_HEADER))
-					{
-						$blocked_parents[] = 'h1';
-						$blocked_parents[] = 'h2';
-						$blocked_parents[] = 'h3';
-						$blocked_parents[] = 'h4';
-						$blocked_parents[] = 'h5';
-						$blocked_parents[] = 'h6';
-					}
+					if (HTML_ELEMENTS_NON_HEADER[$name])
+					{foreach (['h1', 'h2', 'h3', 'h4', 'h5', 'h6', ] as $v) $blocked_parents[] = $v;}
 					switch ($name)
 					{
 						case 'li':
@@ -2899,29 +2911,28 @@ class html {
 							$stoppers[] = 'table';
 						break;
 					}
-					
-					// единственные теги, которые можно внутри h1-h6. Остальные прервут любой заголовок.
-					// if (!in_array($name, ['tt', 'i', 'b', 'big', 'small', 'em', 'strong', 'dfn', 'code', 'samp', 'kbd', 'var', 'cite', 'abbr', 'acronym', 'a', 'img', 'object', 'br', 'map', 'q', 'sub', 'sup', 'span', 'bdo', 'input', 'select', 'textarea', 'label', 'button', ]))
-					// {
-						// foreach (['h1', 'h2', 'h3', 'h4', 'h5', 'h6', ] as $v)
-						// {$blocked_parents[] = $v;}
-					// }
-					
 					if ($blocked_parents)
 					{
 						$n = 0;
-						$found_n = -1;
+						$found_n = $broken_elem = null;
 						foreach ($parent_stack as $e)
 						{
 							if (in_array($e->tag, $stoppers)) break;
 							if (in_array($e->tag, $blocked_parents))
-							{$found_n = $n;}
+							{
+								$found_n = $n;
+								$broken_elem = $e;
+							}
 							$n++;
 						}
-						if ($found_n>=0)
+						if ($found_n!==null)
 						{
-							$parent_stack = array_slice($parent_stack, $found_n+1);
+							$parent_stack = array_slice($parent_stack, $found_n + 1);
 							$curr_parent = ($parent_stack?reset($parent_stack):$this);
+							// закрыть открытый тег, т.к. закрывашки для него не будет - мы сами его закрыли. 
+							// Скорее всего у этого тега закрывашка находится дальше по коду, но мы ее проигнорируем в большинстве случаев.
+							if (!$broken_elem->closer && !HTML_ELEMENTS_VOID[$broken_elem->tag])
+							{$broken_elem->closer = '</'.$broken_elem->tag.'>';}
 						}
 					}
 				}
@@ -2933,7 +2944,7 @@ class html {
 				$obj->parent = $curr_parent;
 				$obj->parent->children[] = $obj;
 				
-				if (in_array($name, HTML_ELEMENTS_VOID) || preg_match('#(\s|<\w+)/\s*>#', $tag_block))
+				if (HTML_ELEMENTS_VOID[$name] || ($is_xml && preg_match('#/\s*>$#', $tag_block)))
 				{
 					// тег, "не-имеющий-закрывающего"
 				}
@@ -2947,7 +2958,7 @@ class html {
 				else
 			{
 				// тег закрылся (из тех, что ранее были открыты)
-				if (in_array($name, HTML_ELEMENTS_SPECIAL))
+				if (HTML_ELEMENTS_SPECIAL[$name])
 				{$special_opened = '';}
 				$n = 0;
 				$was_table = $found = false;
@@ -2972,12 +2983,22 @@ class html {
 					}
 					$n++;
 				}
-				// закрылся не открывавшийся тег - делаем текстовым узлом
-				if (!$found)
+				// закрылся не открывавшийся тег: создаем пустой элемент в этом месте в случае некоторых типов тегов (так делают современные браузеры).
+				// остальные типы тегов просто игнорируем.
+				if (!$found && ($name=='p' || $name=='br'))
 				{
 					$x_obj = new html();
-					$x_obj->tag = '#text';
-					$x_obj->tag_block = $tag_block;
+					
+					// раньше создавался текстовый элемент с соответствующим текстом.
+					// для отладки лучше использовать именно такой режим, это позволит сравнивать (строгим сравнением ===) строку HTML-документа до парсинга и после рендеринга, тем самым проверяя корректность разбора и последующей сборки.
+					// $x_obj->tag = '#text';
+					// $x_obj->tag_block = $tag_block;
+					
+					// поведение современных браузеров
+					$x_obj->tag = $name;
+					$x_obj->tag_block = '<'.$name.'>';
+					$x_obj->closer = '</'.$name.'>';
+					
 					$x_obj->parent = $curr_parent;
 					$x_obj->parent->children[] = $x_obj;	
 				}
