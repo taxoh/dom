@@ -26,14 +26,14 @@
 		- узлы остальных типов не хранят какую-либо текстовую информацию
 		- дерево можно редактировать в любой момент: модифицировать или переносить узлы
 		- если закрывашка пуста, это еще не значит что это тег незакрывающегося типа
+		- любой не-HTML тег (т.е. не входящий в HTML_ELEMENTS_ALL) может быть закрыт если у него имеется слеш ("/") на конце открывающего блока тега. Т.е. он не будет требовать закрывающего тега ("self closing").
 		- html-entities не декодируются кроме как в атрибутах
-		- закрывающиеся теги, которые не были открыты (т.е. лишние закрывашки) парсер игнорирует (за исключением тегов: </p>, </br>). Если после этого собрать документ, то в результате они не появятся
-		- в имени тега могут присутствовать практически любые символы, но начинаться имя тега должно с англ. буквы (a-z).
+		- закрывающиеся теги, которые не были открыты (т.е. лишние закрывашки) парсер игнорирует (т.е. если после этого собрать документ, то в результате они не появятся), за исключением закрывашек: </p>, </br> - они преврашаются в отдельные пустые теги соответствующих типов (т.е. открывашка + закрывашка).
+		- в имени тега могут присутствовать практически любые символы (в т.ч. тире, точки, любые utf-8 символы, итд), но начинаться оно должно строго с англ. буквы (a-z)
 			- если имя тега начинается с "!", и это не doctype, то такой тег будет преобразован в комментарий
 		- умеет парсить XML-файлы (и даже HTML-файлы, содержащие php-код, но с большими оговорками!):
 			- XML-прологи могут встречаться в любом участке документа (в т.ч. в виде php-блоков кода), парсер помечает их как комментарии (тип тега - #comment). Для пролога открывашкой служит "< ?", а закрывашкой "? >" (без пробелов).
 			- XML-документы трактует как HTML-документы, в некоторых случаях (связанных с XML-особенностями) это может влиять на корректность разбора
-			- в режиме XML (если найден характерный именно для XML пролог) "теги-не-требующие-закрывающих" детектируются автоматически по слешу на конце открывающего блока тега (в режиме HTML так не работает). Но применяются также и HTML-правила, имейте в виду. Т.е., например, тег <br> всегда будет автозакрыт.
 			- ВАЖНО: php-блоки не могут находиться внутри блока тега, в т.ч. внутри атрибутов или их имен. Иначе парсер неверно прочитает структуру документа. Поэтому для работы с текстами, содержащими php-блоки лучше перед парсингом заменяйте php-блоки на некоторый неиспользуемый ASCII-символ (скажем, нульбайт), а после - восстановите. 
 		- блоки CDATA не замечает, читает их как и остальной (обычный) текст
 		- "открепленный узел" свое состояние не меняет, с ним можно продолжать работу, но стоит понимать, что он помнит своего (прежнего) родителя и находится в невалидном состоянии (значение parent у него невалидно). Сделать его валидным снова можно передав его в качестве параметра любой из функций:
@@ -50,7 +50,7 @@
 // списки HTML-элементов, разделенные на группы.
 
 // все элементы: cобраны все теги всех стандартов вплоть до HTML5 включительно, а также устаревшие и (почти все) нестандартные теги
-define('HTML_ELEMENTS_ALL', ['a', 'abbr', 'acronym', 'address', 'applet', 'area', 'article', 'aside', 'audio', 'b', 'base', 'basefont', 'bdi', 'bdo', 'bgsound', 'big', 'blink', 'blockquote', 'body', 'br', 'button', 'canvas', 'caption', 'center', 'cite', 'code', 'col', 'colgroup', 'command', 'data', 'datalist', 'dd', 'del', 'details', 'dfn', 'dialog', 'dir', 'div', 'dl', 'dt', 'em', 'embed', 'fieldset', 'figcaption', 'figure', 'font', 'footer', 'form', 'frame', 'frameset', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'head', 'header', 'hgroup', 'hr', 'html', 'i', 'iframe', 'img', 'input', 'ins', 'isindex', 'kbd', 'keygen', 'label', 'legend', 'li', 'link', 'main', 'map', 'mark', 'marquee', 'menu', 'menuitem', 'meta', 'meter', 'nav', 'nobr', 'noembed', 'noframes', 'noscript', 'object', 'ol', 'optgroup', 'option', 'output', 'p', 'param', 'picture', 'plaintext', 'pre', 'progress', 'q', 'rp', 'rt', 'ruby', 's', 'samp', 'noindex', 'script', 'section', 'select', 'small', 'source', 'span', 'strike', 'strong', 'style', 'sub', 'summary', 'sup', 'table', 'tbody', 'td', 'textarea', 'tfoot', 'th', 'thead', 'time', 'title', 'tr', 'track', 'tt', 'u', 'ul', 'var', 'video', 'wbr', 'xmp', ]);
+define('HTML_ELEMENTS_ALL', ['!doctype' => true, 'a' => true, 'abbr' => true, 'acronym' => true, 'address' => true, 'applet' => true, 'area' => true, 'article' => true, 'aside' => true, 'audio' => true, 'b' => true, 'base' => true, 'basefont' => true, 'bdi' => true, 'bdo' => true, 'bgsound' => true, 'big' => true, 'blink' => true, 'blockquote' => true, 'body' => true, 'br' => true, 'button' => true, 'canvas' => true, 'caption' => true, 'center' => true, 'cite' => true, 'code' => true, 'col' => true, 'colgroup' => true, 'command' => true, 'data' => true, 'datalist' => true, 'dd' => true, 'del' => true, 'details' => true, 'dfn' => true, 'dialog' => true, 'dir' => true, 'div' => true, 'dl' => true, 'dt' => true, 'em' => true, 'embed' => true, 'fieldset' => true, 'figcaption' => true, 'figure' => true, 'font' => true, 'footer' => true, 'form' => true, 'frame' => true, 'frameset' => true, 'h1' => true, 'h2' => true, 'h3' => true, 'h4' => true, 'h5' => true, 'h6' => true, 'head' => true, 'header' => true, 'hgroup' => true, 'hr' => true, 'html' => true, 'i' => true, 'iframe' => true, 'img' => true, 'input' => true, 'ins' => true, 'isindex' => true, 'kbd' => true, 'keygen' => true, 'label' => true, 'legend' => true, 'li' => true, 'link' => true, 'main' => true, 'map' => true, 'mark' => true, 'marquee' => true, 'menu' => true, 'menuitem' => true, 'meta' => true, 'meter' => true, 'nav' => true, 'nobr' => true, 'noembed' => true, 'noframes' => true, 'noscript' => true, 'object' => true, 'ol' => true, 'optgroup' => true, 'option' => true, 'output' => true, 'p' => true, 'param' => true, 'picture' => true, 'plaintext' => true, 'pre' => true, 'progress' => true, 'q' => true, 'rp' => true, 'rt' => true, 'ruby' => true, 's' => true, 'samp' => true, 'noindex' => true, 'script' => true, 'section' => true, 'select' => true, 'small' => true, 'source' => true, 'span' => true, 'strike' => true, 'strong' => true, 'style' => true, 'sub' => true, 'summary' => true, 'sup' => true, 'table' => true, 'tbody' => true, 'td' => true, 'textarea' => true, 'tfoot' => true, 'th' => true, 'thead' => true, 'time' => true, 'title' => true, 'tr' => true, 'track' => true, 'tt' => true, 'u' => true, 'ul' => true, 'var' => true, 'video' => true, 'wbr' => true, 'xmp' => true, ]);
 // блочные элементы
 define('HTML_ELEMENTS_BLOCK', ['address', 'article', 'aside', 'blockquote', 'center', 'dd', 'details', 'dir', 'div', 'dl', 'dt', 'embed', 'fieldset', 'figcaption', 'figure', 'footer', 'form', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'header', 'hgroup', 'hr', 'isindex', 'li', 'main', 'marquee', 'nav', 'ol', 'p', 'pre', 'rt', 'section', 'summary', 'table', 'tbody', 'td', 'tfoot', 'th', 'thead', 'tr', 'ul', 'xmp', ]);
 // строчные элементы
@@ -967,27 +967,45 @@ class html {
 			$res = [];
 			if (($v = ($attrs_cache[$this->tag_block]))!==NULL)
 			{return $v;}
-			if (preg_match_all('#([\w\-]+)(?:\s*=\s*("[^"<>]*"|\'[^\'<>]*\'|[^\s<>=]*))?#si', preg_replace('#^<[^\s<>]+#', '', $this->tag_block), $m, PREG_SET_ORDER))
+			if (preg_match_all('#'.
+				'[\s/]*'. // пробел перед атрибутом. Также в роли пробела может быть знак "/" (поведение Chrome).
+				'(?:'.
+					// Как ни странно, но "<" может также быть частью имени атрибута (поведение Chrome + html стандарт).
+					// вопреки стандарту символ "=" может быть именем атрибута, но имя атрибута при этом не может содержать знак "=" в своем составе.
+					'([^\s>/=]+|=)\s*=\s*"([^"]*)"'. // с двойной кавычкой, например: abc="qwe" или abc=""
+						'|'.
+					'([^\s>/=]+|=)\s*=\s*\'([^\']*)\''. // с одинарной кавычкой, например: abc='qwe' или abc=''
+						'|'.
+					'([^\s>/=]+|=)\s*=\s*(?!["\'])([^\s>]*)'. // без кавычек, например: abc=qwe или abc=
+						'|'.
+					'([^\s>/=]+|=)(?!\s*=)'. // атрибут без знака равно, например: abc (в т.ч. имя может быть "=", но ровно один знак)
+						'|'.
+					// пустое выражение. Для возможности съесть серии из слешей на конце, а также опциональный self-closing знак, например: <tag />
+					''.
+				')'.
+			'#si', preg_replace(['#^<(!?[a-z][^\s>/]*)#si', '#>$#si', ], '', $this->tag_block), $m, PREG_SET_ORDER))
 			{
 				foreach ($m as $mm)
 				{
-					if ($mm[2]{0}=='"' || $mm[2]{0}=='\'')
-					{$mm[2] = trim($mm[2], $mm[2]{0});}
-					$a = strtolower($mm[1]);
+					if (strlen($mm[1].$mm[2])) list($a, $x) = [$mm[1], $mm[2], ];
+					elseif (strlen($mm[3].$mm[4])) list($a, $x) = [$mm[3], $mm[4], ];
+					elseif (strlen($mm[5].$mm[6])) list($a, $x) = [$mm[5], $mm[6], ];
+					elseif (strlen($mm[7])) list($a, $x) = [$mm[7], '', ];
+					else continue;
+					$a = strtolower($a);
 					// согласно стандарту атрибуты, дублирующие уже существующие, должны игнорироваться.
 					// > if there is already an attribute on the token with the exact same name, then this is a parse error and the new attribute must be dropped
 					if (!isset($res[$a]))
 					{
 						// раскодировать *любые* HTML-entities в строке. В том числе: "<", ">", '"' и "'"
-						$x = $mm[2];
 						$x = html_entity_decode($x, ENT_HTML5 + ENT_QUOTES, 'utf-8');
-						// возникают невидимые неразрывные пробелы ("nbsp" после декодирования)
+						// возникают невидимые неразрывные пробелы ("nbsp") после декодирования
 						$x = preg_replace('#\x{a0}#u', ' ', $x);
 						$res[$a] = $x;
 					}
 				}
-				if (count($attrs_cache)>20000)
-				{$attrs_cache = array_slice($attrs_cache, 10000, NULL, true);}
+				if (count($attrs_cache) > 2000)
+				{$attrs_cache = array_slice($attrs_cache, 1000, NULL, true);}
 				$attrs_cache[$this->tag_block] = $res;
 			}
 			return $res;
@@ -2778,10 +2796,40 @@ class html {
 		if ($this->tag[0]=='#')
 		{$only_inner = false;}
 		$curr_parent->children = [];
-		$is_xml = false;
 		$parent_stack = [];
 		$offset = $last_opened_or_closed_tag_offset = 0;
-		if (!preg_match_all('#<!--|-->|<\?|\?'.'>|</?(!?[a-z][^\s<>/]*)\b[^<>]*(?<!--)>#si', $html, $m, PREG_OFFSET_CAPTURE + PREG_SET_ORDER))
+		// регулярка соответствует спецификации и поведению современных браузеров, всё проверено-перепроверено
+		if (!preg_match_all('#'.
+			'<!--'. // открывашка от HTML-комментария
+				'|'.
+			'-->'. // закрывашка от HTML-комментария
+				'|'.
+			'<\?'. // открывашка от XML-пролога
+				'|'.
+			'\?\>'. // закрывашка от XML-пролога
+				'|'.
+			'</?'. // теговый блок (т.е. открывашка тега, либо закрывашка тега)
+			'(!?[a-z][^\s>/]*)'. // имя тега, например div. Как ни странно, но "<" может также быть частью имени тега (поведение Chrome).
+			// атрибуты
+			'(?:'.
+				'[\s/]*'. // пробел перед атрибутом. Также в роли пробела может быть знак "/" (поведение Chrome).
+				'(?:'.
+					// Как ни странно, но "<" может также быть частью имени атрибута (поведение Chrome + html стандарт).
+					// вопреки стандарту символ "=" может быть именем атрибута, но имя атрибута при этом не может содержать знак "=" в своем составе.
+					'(?:[^\s>/=]+|=)\s*=\s*"[^"]*"'. // с двойной кавычкой, например: abc="qwe" или abc=""
+						'|'.
+					'(?:[^\s>/=]+|=)\s*=\s*\'[^\']*\''. // с одинарной кавычкой, например: abc='qwe' или abc=''
+						'|'.
+					'(?:[^\s>/=]+|=)\s*=\s*(?!["\'])[^\s>]*'. // без кавычек, например: abc=qwe или abc=
+						'|'.
+					'(?:[^\s>/=]+|=)(?!\s*=)'. // атрибут без знака равно, например: abc (в т.ч. имя может быть "=", но ровно один знак)
+						'|'.
+					// пустое выражение. Для возможности съесть серии из слешей на конце, а также опциональный self-closing знак, например: <tag />
+					''.
+				')'.
+			')*'.
+			'(?<!--)>'. // конец тегового блока
+			'#si', $html, $m, PREG_OFFSET_CAPTURE + PREG_SET_ORDER))
 		{$m = [];}
 		// типы возможных комментариев и их закрывашки
 		$comment_types = [
@@ -2801,8 +2849,8 @@ class html {
 				{
 					$comment->tag_block = substr($html, $comment_started_at, $offset + strlen($tag_block)-$comment_started_at);
 					$last_opened_or_closed_tag_offset = $offset + strlen($tag_block);
-					if ($tag_block=="\x3f\x3e" && preg_match('#^<\?xml\b#i', $comment->tag_block))
-					{$is_xml = true;}
+					// if ($tag_block=="\x3f\x3e" && preg_match('#^<\?xml\b#i', $comment->tag_block))
+					// {$is_xml = true;}
 					$comment = false;
 				}
 				continue;
@@ -2944,7 +2992,7 @@ class html {
 				$obj->parent = $curr_parent;
 				$obj->parent->children[] = $obj;
 				
-				if (HTML_ELEMENTS_VOID[$name] || ($is_xml && preg_match('#/\s*>$#', $tag_block)))
+				if (HTML_ELEMENTS_VOID[$name] || (!HTML_ELEMENTS_ALL[$name] && preg_match('#/\s*>$#', $tag_block)))
 				{
 					// тег, "не-имеющий-закрывающего"
 				}
