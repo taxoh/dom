@@ -27,7 +27,7 @@
 		- дерево можно редактировать в любой момент: модифицировать или переносить узлы
 		- если закрывашка пуста, это еще не значит что это тег незакрывающегося типа
 		- любой не-HTML тег (т.е. не входящий в HTML_ELEMENTS_ALL) может быть закрыт если у него имеется слеш ("/") на конце открывающего блока тега. Т.е. он не будет требовать закрывающего тега ("self closing").
-		- html-entities не декодируются кроме как в атрибутах
+		- html-entities не декодируются нигде, кроме как в атрибутах
 		- закрывающиеся теги, которые не были открыты (т.е. лишние закрывашки) парсер игнорирует (т.е. если после этого собрать документ, то в результате они не появятся), за исключением закрывашек: </p>, </br> - они преврашаются в отдельные пустые теги соответствующих типов (т.е. открывашка + закрывашка).
 		- в имени тега могут присутствовать практически любые символы (в т.ч. тире, точки, любые utf-8 символы, итд), но начинаться оно должно строго с англ. буквы (a-z)
 			- если имя тега начинается с "!", и это не doctype, то такой тег будет преобразован в комментарий
@@ -873,6 +873,7 @@ class html {
 				Нельзя менять состав *соседей* текущего обрабатываемого узла ($node). 
 				В том числе нельзя это делать через replace(), pull_up() и подобные функции. 
 				Но вы можете что угодно делать с потомками текущего обрабатываемого узла ($node->children или $node->children[...]...->children...) или с ним самим ($node).
+				В том числе можно удалить текущий узел ($node->remove(), см. ниже).
 			Если удаляете текущий обрабатываемый узел ($node->remove()), то обязательно установите $ctrl['skip'] в true!
 			А если всё таки требуется изменение предков, то изменить их можно, но обработку нужно полностью отменить и начать заново, т.е.: 
 				- либо колбек должен вернуть true
@@ -929,13 +930,13 @@ class html {
 	/*	Функция предназначена для вызова изнутри колбека iterate().
 		Позволяет проверить, нет ли среди родителей текущего узла тегов заданного типа.
 			$tags - массив имен тегов, например: ['strong', 'span', ]
-			$c - массив контроля за обработкой
+			$c - стек родителей (из массива контроля за обработкой, т.е. $ctrl['stack'])
 		Вернет узел (либо NULL, если не найдено).
 		Возвращает наиболее дальнего родителя среди найденных.
 	*/
 	static public function stack_have($tags, $c)
 	{
-		foreach ($c['stack'] as $v)
+		foreach ($c as $v)
 		{if (in_array($v->tag, $tags)) return $v;}
 	}
 	
@@ -956,6 +957,9 @@ class html {
 			$values - массив вида 'ключ'=>'значение'. Если не задан, то функция вернет текущий массив атрибутов тега.
 			$encode_entities - выполнить ли кодирование значений атрибутов через htmlspecialchars()
 		Атрибуты возвращаются в декодированном виде, имена атрибутов переводятся в нижний регистр.
+		При чтении атрибутов в их значениях будут раскодированы любые HTML-entities (осторожнее с "&nbsp;" - это будет декодировано не в обычный пробел, а в "неразрывный", т.е. в "\u{a0}", в бинарном виде это два байта "\xC2\xA0").
+		При записи атрибутов обратно в тег их значения будут оформлены в двойные кавычки (т.е. их оригинальное оформление не сохранится). Но вы можете сделать это самостоятельно, заполнив $tag_block по своему вкусу и вызвав invalidate() этому узлу.
+		При записи атрибутов атрибутов неразрывный пробел будет закодирован функцией как "&nbsp;".
 	*/
 	public function attrs($values = NULL, $encode_entities = true)
 	{
@@ -987,39 +991,37 @@ class html {
 			{
 				foreach ($m as $mm)
 				{
-					if (strlen($mm[1].$mm[2])) list($a, $x) = [$mm[1], $mm[2], ];
-					elseif (strlen($mm[3].$mm[4])) list($a, $x) = [$mm[3], $mm[4], ];
-					elseif (strlen($mm[5].$mm[6])) list($a, $x) = [$mm[5], $mm[6], ];
+					if (strlen($mm[1])) list($a, $x) = [$mm[1], $mm[2], ];
+					elseif (strlen($mm[3])) list($a, $x) = [$mm[3], $mm[4], ];
+					elseif (strlen($mm[5])) list($a, $x) = [$mm[5], $mm[6], ];
 					elseif (strlen($mm[7])) list($a, $x) = [$mm[7], '', ];
 					else continue;
 					$a = strtolower($a);
-					// согласно стандарту атрибуты, дублирующие уже существующие, должны игнорироваться.
-					// > if there is already an attribute on the token with the exact same name, then this is a parse error and the new attribute must be dropped
-					if (!isset($res[$a]))
-					{
-						// раскодировать *любые* HTML-entities в строке. В том числе: "<", ">", '"' и "'"
-						$x = html_entity_decode($x, ENT_HTML5 + ENT_QUOTES, 'utf-8');
-						// возникают невидимые неразрывные пробелы ("nbsp") после декодирования
-						$x = preg_replace('#\x{a0}#u', ' ', $x);
-						$res[$a] = $x;
-					}
+					// согласно стандарту атрибуты, дублирующие уже существующие, должны игнорироваться
+					if (isset($res[$a])) continue;
+					// раскодировать *любые* HTML-entities в строке. В том числе: "<", ">", '"' и "'"
+					$x = html_entity_decode($x, ENT_HTML5 + ENT_QUOTES, 'utf-8');
+					// возникают невидимые неразрывные пробелы ("nbsp") после декодирования
+					// $x = str_replace("\u{a0}", ' ', $x); //  зачем?
+					$res[$a] = $x;
 				}
-				if (count($attrs_cache) > 2000)
-				{$attrs_cache = array_slice($attrs_cache, 1000, NULL, true);}
+				// для ускорения доступа используется неявный кеш
+				if (count($attrs_cache) > 20000)
+				{$attrs_cache = array_slice($attrs_cache, 10000, NULL, true);}
 				$attrs_cache[$this->tag_block] = $res;
 			}
 			return $res;
 		}
 			else
 		{
-			if ($this->tag[0]=='#' || !preg_match('#^(<[^\s<>]+\s*).*?([\s/]*>)$#s', $this->tag_block, $m))
+			if ($this->tag[0]=='#' || !preg_match('#^(<[a-z][^\s>/]*\s*).*?([\s/]*>)$#si', $this->tag_block, $m2))
 			{return;}
 			if ($encode_entities)
-			{foreach ($values as $k=>&$v) $v = $k.'="'.htmlspecialchars($v).'"';}
+			{foreach ($values as $k=>&$v) $v = $k.'="'.str_replace("\u{a0}", '&nbsp;', htmlspecialchars($v)).'"';}
 				else
 			{foreach ($values as $k=>&$v) $v = $k.'="'.$v.'"';}
 			unset($v);
-			$this->tag_block = ($values?$m[1]:rtrim($m[1])).(($values && !preg_match('#\s$#', $m[1]))?' ':'').implode(' ', $values).$m[2];
+			$this->tag_block = ($values?$m2[1]:rtrim($m2[1])).(($values && !preg_match('#\s$#', $m2[1]))?' ':'').implode(' ', $values).$m2[2];
 			$this->invalidate();
 		}
 	}
@@ -2174,7 +2176,7 @@ class html {
 						// $n->tag=='a' &&
 						// ($attrs = $n->attrs()) &&
 						// ($attrs['href']=='#' || array_intersect_key($attrs, ['class'=>'', 'id'=>'', 'title'=>'', 'name'=>'', ])) &&
-						// !html::stack_have(['h1', 'h2', 'h3', 'h4', 'h5', 'h6', ], $c)
+						// !html::stack_have(['h1', 'h2', 'h3', 'h4', 'h5', 'h6', ], $c['stack'])
 					// )) ||
 					($reasons['гавеные фреймы'] = (
 						$n->tag=='iframe' &&
@@ -2222,8 +2224,8 @@ class html {
 						)
 					) ||
 					($reasons['элементы списков, находящиеся вне списков'] = (
-						($n->tag=='li' && !html::stack_have(['ul', 'ol', ], $c)) ||
-						(in_array($n->tag, ['dt', 'dd', ]) && !html::stack_have(['dl', ], $c)) ||
+						($n->tag=='li' && !html::stack_have(['ul', 'ol', ], $c['stack'])) ||
+						(in_array($n->tag, ['dt', 'dd', ]) && !html::stack_have(['dl', ], $c['stack'])) ||
 						false
 					)) ||
 					($reasons['определенные теги, содержащие хотя бы одну цифру в своем strip-контенте и когда при этом в нем содержится мало буквенных символов'] = (
@@ -2239,7 +2241,7 @@ class html {
 					)) || 
 					($reasons['почти любые теги внутри заголовков удаляются'] = (
 						!in_array($n->tag, ['#text', 'a', ]) &&
-						($hdr = html::stack_have(['h1', 'h2', 'h3', 'h4', 'h5', 'h6', ], $c)) &&
+						($hdr = html::stack_have(['h1', 'h2', 'h3', 'h4', 'h5', 'h6', ], $c['stack'])) &&
 						// но только если удаление тега не приведет к полному опустошению заголовка
 						str_replace($n->strip(), '', $hdr->strip()) > 25
 					)) ||
@@ -2269,7 +2271,7 @@ class html {
 				
 				if (in_array($n->tag, ['img', 'iframe', ]) &&
 					!$n->popped &&
-					!html::stack_have(['table', ], $c)
+					!html::stack_have(['table', ], $c['stack'])
 				)
 				{
 					if ($do_debug)
@@ -2287,11 +2289,11 @@ class html {
 					($reasons['если у табличного тега среди родителей нет таблички, то такой тег выворачиваем'] = 
 					(
 						in_array($n->tag, ['tr', 'td', 'th', 'thead', 'tbody', 'tfoot', ]) &&
-						!html::stack_have(['table', ], $c)
+						!html::stack_have(['table', ], $c['stack'])
 					)) ||
 					($reasons['вложенные span/strong/em'] = (
-						(in_array($n->tag, ['span', 'strong', 'em', ]) && html::stack_have(['strong', 'em', ], $c)) ||
-						(in_array($n->tag, ['span', ]) && html::stack_have(['span', ], $c))
+						(in_array($n->tag, ['span', 'strong', 'em', ]) && html::stack_have(['strong', 'em', ], $c['stack'])) ||
+						(in_array($n->tag, ['span', ]) && html::stack_have(['span', ], $c['stack']))
 					)) ||
 					($reasons['слишком длинные a/span/strong/em выворачиваем'] = (
 						(
@@ -3092,10 +3094,13 @@ class html {
 				if ($res) return true;
 				$rewind = $c['rewind_level'];
 				if (is_int($rewind)) continue 2;
-				$stack[] = $child;
-				if (!$c['skip'] && $child->iterate_recurs($stack, $rewind, $callback))
-				{return true;}
-				array_pop($stack);
+				if (!$c['skip'])
+				{
+					$stack[] = $child;
+					if ($child->iterate_recurs($stack, $rewind, $callback))
+					{return true;}
+					array_pop($stack);
+				}
 			}
 			break;
 		} while (true);
